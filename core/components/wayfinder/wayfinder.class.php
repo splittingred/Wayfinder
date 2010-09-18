@@ -19,18 +19,18 @@ class Wayfinder {
     public $hasChildren = array ();
     public $placeHolders = array (
         'rowLevel' => array (
-            '[[+wf.wrapper]]',
-            '[[+wf.classes]]',
-            '[[+wf.classnames]]',
-            '[[+wf.link]]',
-            '[[+wf.title]]',
-            '[[+wf.linktext]]',
-            '[[+wf.id]]',
-            '[[+wf.attributes]]',
-            '[[+wf.docid]]',
-            '[[+wf.introtext]]',
-            '[[+wf.description]]',
-            '[[+wf.subitemcount]]'
+            'wf.wrapper',
+            'wf.classes',
+            'wf.classnames',
+            'wf.link',
+            'wf.title',
+            'wf.linktext',
+            'wf.id',
+            'wf.attributes',
+            'wf.docid',
+            'wf.introtext',
+            'wf.description',
+            'wf.subitemcount'
         ),
         'wrapperLevel' => array (
             '[[+wf.wrapper]]',
@@ -248,10 +248,18 @@ class Wayfinder {
         /* load row values into placholder array */
         $phArray = array($useSub,$useClass,$classNames,$resource['link'],$resource['title'],$resource['linktext'],$useId,$resource['link_attributes'],$resource['id'],$resource['introtext'],$resource['description'],$numChildren);
         /* if TVs are used add them to the placeholder array */
-        if (!empty($this->tvList)) {
+
+        //mod by Bruno
+        foreach ($this->placeHolders['rowLevel'] as $key=>$rowlevelPh){
+        	$placeholders[$rowlevelPh]=$phArray[$key];
+        }
+		//end mod
+		
+		if (!empty($this->tvList)) {
             $usePlaceholders = array_merge($this->placeHolders['rowLevel'],$this->placeHolders['tvs']);
             foreach ($this->tvList as $tvName) {
                 $phArray[] = $resource[$tvName];
+				$placeholders[$tvName]=$resource[$tvName];//mod by Bruno
             }
         } else {
             $usePlaceholders = $this->placeHolders['rowLevel'];
@@ -267,7 +275,14 @@ class Wayfinder {
             $this->addDebugInfo("rowdata","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were retrieved from the database for this document.",$resource);
         }
         /* process the row */
-        $output .= str_replace($usePlaceholders,$phArray,$useChunk);
+        //$output .= str_replace($usePlaceholders,$phArray,$useChunk);mod by Bruno
+		
+		//echo'<pre>'.print_r($placeholders,true).'</pre>';
+		
+        $chunk = $this->modx->newObject('modChunk');
+        $chunk->setCacheable(false);
+        $output .= $chunk->process($placeholders, $useChunk);		
+		
         /* return the row */
         return $output . $this->_config['nl'];
     }
@@ -589,7 +604,7 @@ class Wayfinder {
 
             foreach ($nonWayfinderFields as $field) {
                 if (in_array($field, $allTvars)) {
-                    $this->placeHolders['tvs'][] = "[[+{$field}]]";
+                    $this->placeHolders['tvs'][] = "{$field}";
                     $this->tvList[] = $field;
                 }
             }
@@ -603,7 +618,8 @@ class Wayfinder {
      * @param string $tpl Template to be fetched
      * @return string|bool Template HTML or false if no template was found
      */
-    public function fetch($tpl){
+    /*
+	public function fetch($tpl){
         $template = "";
         if ($this->modx->getChunk($tpl) != "") {
             $template = $this->modx->getChunk($tpl);
@@ -616,6 +632,27 @@ class Wayfinder {
         }
         return $template;
     }
+    */
+
+	public function fetch($tpl){
+		global $modx;
+		$template = "";
+
+        if ($chunk= $modx->getObject('modChunk', array ('name' => $tpl), true)) {
+            $template = $chunk->getContent();
+		} else if(substr($tpl, 0, 6) == "@FILE:") {
+			$template = $this->get_file_contents(substr($tpl, 6));
+		} else if(substr($tpl, 0, 6) == "@CODE:") {
+			$template = substr($tpl, 6);
+		} else if(substr($tpl, 0, 5) == "@FILE") {
+			$template = $this->get_file_contents(trim(substr($tpl, 5)));
+		} else if(substr($tpl, 0, 5) == "@CODE") {
+			$template = trim(substr($tpl, 5));
+		} else {
+			$template = false;
+		}
+			return $template;
+	}
 
     /**
      * Substitute function for file_get_contents()
@@ -640,7 +677,8 @@ class Wayfinder {
      * @param string $tpl The template code to be processed
      * @return array|bool An array containing the TV names or false if no names were found
      */
-    public function findTemplateVars($tpl) {
+    /*
+	public function findTemplateVars($tpl) {
         preg_match_all('~\[\[\+(.*?)\]\]~', $tpl, $matches);
         $cnt = count($matches[1]);
 
@@ -657,6 +695,24 @@ class Wayfinder {
             return false;
         }
     }
+    */
+
+	public function findTemplateVars($tpl) {
+        preg_match_all('~\[\[\+(.*?)\]\]~', $tpl, $matches);
+        $TVs = array();
+        foreach($matches[1] as $tv) {
+            if (strpos($tv, "wf.") === false) {
+            $match = explode(":", $tv);
+            $TVs[strtolower($match[0])] = $match[0];
+            }
+        }
+        if (count($TVs) >= 1) {
+            return array_values($TVs);
+        } else {
+            return false;
+        }
+	}
+
 
     /**
      * Add debug information to the debug array
