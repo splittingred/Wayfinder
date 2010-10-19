@@ -66,6 +66,7 @@ class Wayfinder {
             'textOfLinks' => 'menutitle',
             'titleOfLinks' => 'pagetitle',
             'displayStart' => false,
+			'permissions' => 'list',
         ),$config);
 
         if (isset($config['sortOrder'])) {
@@ -476,6 +477,7 @@ class Wayfinder {
             $resultIds = array();
 
             foreach ($result as $doc)  {
+				if ((!empty($this->_config['permissions'])) && (!$doc->checkPolicy($this->_config['permissions']))) continue;
                 $tempDocInfo = $doc->toArray();
                 $resultIds[] = $tempDocInfo['id'];
                 $tempDocInfo['content'] = $tempDocInfo['class_key'] == 'modWebLink' ? $tempDocInfo['content'] : '';
