@@ -11,14 +11,14 @@
  * @version 2.1.1-beta5
  * @author Garry Nutting (collabpad.com)
  * @author Kyle Jaebker (muddydogpaws.com)
- * @author Ryan Thrash (collabpad.com)
- * @author Shaun McCormick (collabpad.com)
- * @author Jason Coward (collabpad.com)
+ * @author Ryan Thrash (modx.com)
+ * @author Shaun McCormick (modx.com)
+ * @author Jason Coward (modx.com)
  *
  * @example [[Wayfinder? &startId=`0`]]
  *
  */
-$wayfinder_base = $modx->getOption('core_path').'components/wayfinder/';
+$wayfinder_base = $modx->getOption('wayfinder.core_path',$scriptProperties,$modx->getOption('core_path').'components/wayfinder/');
 
 /* include a custom config file if specified */
 if (isset($scriptProperties['config'])) {
@@ -41,39 +41,38 @@ $wf = new Wayfinder($modx,$scriptProperties);
 /* get user class definitions
  * TODO: eventually move these into config parameters */
 $wf->_css = array(
-	'first' => isset($firstClass) ? $firstClass : '',
-	'last' => isset($lastClass) ? $lastClass : 'last',
-	'here' => isset($hereClass) ? $hereClass : 'active',
-	'parent' => isset($parentClass) ? $parentClass : '',
-	'row' => isset($rowClass) ? $rowClass : '',
-	'outer' => isset($outerClass) ? $outerClass : '',
-	'inner' => isset($innerClass) ? $innerClass : '',
-	'level' => isset($levelClass) ? $levelClass: '',
-	'self' => isset($selfClass) ? $selfClass : '',
-	'weblink' => isset($webLinkClass) ? $webLinkClass : ''
+    'first' => isset($firstClass) ? $firstClass : '',
+    'last' => isset($lastClass) ? $lastClass : 'last',
+    'here' => isset($hereClass) ? $hereClass : 'active',
+    'parent' => isset($parentClass) ? $parentClass : '',
+    'row' => isset($rowClass) ? $rowClass : '',
+    'outer' => isset($outerClass) ? $outerClass : '',
+    'inner' => isset($innerClass) ? $innerClass : '',
+    'level' => isset($levelClass) ? $levelClass: '',
+    'self' => isset($selfClass) ? $selfClass : '',
+    'weblink' => isset($webLinkClass) ? $webLinkClass : ''
 );
 
 /* get user templates
  * TODO: eventually move these into config parameters */
 $wf->_templates = array(
-	'outerTpl' => isset($outerTpl) ? $outerTpl : '',
-	'rowTpl' => isset($rowTpl) ? $rowTpl : '',
-	'parentRowTpl' => isset($parentRowTpl) ? $parentRowTpl : '',
-	'parentRowHereTpl' => isset($parentRowHereTpl) ? $parentRowHereTpl : '',
-	'hereTpl' => isset($hereTpl) ? $hereTpl : '',
-	'innerTpl' => isset($innerTpl) ? $innerTpl : '',
-	'innerRowTpl' => isset($innerRowTpl) ? $innerRowTpl : '',
-	'innerHereTpl' => isset($innerHereTpl) ? $innerHereTpl : '',
-	'activeParentRowTpl' => isset($activeParentRowTpl) ? $activeParentRowTpl : '',
-	'categoryFoldersTpl' => isset($categoryFoldersTpl) ? $categoryFoldersTpl : '',
-	'startItemTpl' => isset($startItemTpl) ? $startItemTpl : ''
+    'outerTpl' => isset($outerTpl) ? $outerTpl : '',
+    'rowTpl' => isset($rowTpl) ? $rowTpl : '',
+    'parentRowTpl' => isset($parentRowTpl) ? $parentRowTpl : '',
+    'parentRowHereTpl' => isset($parentRowHereTpl) ? $parentRowHereTpl : '',
+    'hereTpl' => isset($hereTpl) ? $hereTpl : '',
+    'innerTpl' => isset($innerTpl) ? $innerTpl : '',
+    'innerRowTpl' => isset($innerRowTpl) ? $innerRowTpl : '',
+    'innerHereTpl' => isset($innerHereTpl) ? $innerHereTpl : '',
+    'activeParentRowTpl' => isset($activeParentRowTpl) ? $activeParentRowTpl : '',
+    'categoryFoldersTpl' => isset($categoryFoldersTpl) ? $categoryFoldersTpl : '',
+    'startItemTpl' => isset($startItemTpl) ? $startItemTpl : ''
 );
 
 /* process Wayfinder */
 $output = $wf->run();
-
 if ($wf->_config['debug']) {
-	$output .= $wf->renderDebugOutput();
+    $output .= $wf->renderDebugOutput();
 }
 
 /* output results */

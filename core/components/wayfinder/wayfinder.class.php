@@ -49,8 +49,8 @@ class Wayfinder {
         $this->_config = array_merge(array(
             'id' => $this->modx->resource->get('id'),
             'level' => 0,
-            'includeDocs' => 0,
-            'excludeDocs' => 0,
+            'includeDocs' => '',
+            'excludeDocs' => '',
             'ph' => false,
             'debug' => false,
             'ignoreHidden' =>false,
@@ -66,7 +66,7 @@ class Wayfinder {
             'textOfLinks' => 'menutitle',
             'titleOfLinks' => 'pagetitle',
             'displayStart' => false,
-			'permissions' => 'list',
+            'permissions' => 'list',
         ),$config);
 
         if (isset($config['sortOrder'])) {
@@ -425,17 +425,17 @@ class Wayfinder {
             }
 
             /* add the include resources to the where clause */
-            if ($this->_config['includeDocs']) {
-                $c->where(array('modResource.id IN('.$this->_config['includeDocs'].')'));
+            if (!empty($this->_config['includeDocs'])) {
+                $ids = array_merge($ids,explode(',',$this->_config['includeDocs']));
             }
 
             /* add the exclude resources to the where clause */
-            if ($this->_config['excludeDocs']) {
+            if (!empty($this->_config['excludeDocs'])) {
                 $c->where(array('modResource.id NOT IN('.$this->_config['excludeDocs'].')'));
             }
 
             /* add the limit to the query */
-            if ($this->_config['limit']) {
+            if (!empty($this->_config['limit'])) {
                 $c->limit($this->_config['limit'], 0);
             }
 
@@ -452,7 +452,8 @@ class Wayfinder {
 
             /* build query */
             if ($this->modx->isFrontend()) {
-                $c->where(array('privateweb:=' => 0));
+                // this is deprecated and should be ignored; checkPolicy handles this now
+                //$c->where(array('privateweb:=' => 0));
             } else {
                 $c->where(array('1:=' => $_SESSION['mgrRole'], 'privatemgr:=' => 0), xPDOQuery::SQL_OR);
                 if (!empty($docgrp)) {
@@ -462,9 +463,10 @@ class Wayfinder {
             $c->where(array('modResource.id:IN' =>  $ids));
             $c->where(array('modResource.published:=' => 1));
             $c->where(array('modResource.deleted:=' => 0));
-            $c->groupby('modResource.id');
+            $c->groupby($this->modx->getSelectColumns('modResource','modResource','',array('id')));
 
             $result = $this->modx->getCollection('modResource', $c);
+
 
             $resourceArray = array();
             $level = 1;
@@ -621,41 +623,24 @@ class Wayfinder {
      * @param string $tpl Template to be fetched
      * @return string|bool Template HTML or false if no template was found
      */
-    /*
-	public function fetch($tpl){
+    public function fetch($tpl) {
         $template = "";
-        if ($this->modx->getChunk($tpl) != "") {
-            $template = $this->modx->getChunk($tpl);
+
+        if ($chunk= $this->modx->getObject('modChunk', array ('name' => $tpl), true)) {
+            $template = $chunk->getContent();
         } else if(substr($tpl, 0, 6) == "@FILE:") {
             $template = $this->get_file_contents(substr($tpl, 6));
         } else if(substr($tpl, 0, 6) == "@CODE:") {
             $template = substr($tpl, 6);
+        } else if(substr($tpl, 0, 5) == "@FILE") {
+            $template = $this->get_file_contents(trim(substr($tpl, 5)));
+        } else if(substr($tpl, 0, 5) == "@CODE") {
+            $template = trim(substr($tpl, 5));
         } else {
             $template = false;
         }
         return $template;
     }
-    */
-
-	public function fetch($tpl){
-		global $modx;
-		$template = "";
-
-        if ($chunk= $modx->getObject('modChunk', array ('name' => $tpl), true)) {
-            $template = $chunk->getContent();
-		} else if(substr($tpl, 0, 6) == "@FILE:") {
-			$template = $this->get_file_contents(substr($tpl, 6));
-		} else if(substr($tpl, 0, 6) == "@CODE:") {
-			$template = substr($tpl, 6);
-		} else if(substr($tpl, 0, 5) == "@FILE") {
-			$template = $this->get_file_contents(trim(substr($tpl, 5)));
-		} else if(substr($tpl, 0, 5) == "@CODE") {
-			$template = trim(substr($tpl, 5));
-		} else {
-			$template = false;
-		}
-			return $template;
-	}
 
     /**
      * Substitute function for file_get_contents()
@@ -674,33 +659,7 @@ class Wayfinder {
         return $fcontents;
     }
 
-    /**
-     * Find all TV names in the template
-     *
-     * @param string $tpl The template code to be processed
-     * @return array|bool An array containing the TV names or false if no names were found
-     */
-    /*
-	public function findTemplateVars($tpl) {
-        preg_match_all('~\[\[\+(.*?)\]\]~', $tpl, $matches);
-        $cnt = count($matches[1]);
-
-        $tvnames = array ();
-        for ($i = 0; $i < $cnt; $i++) {
-            if (strpos($matches[1][$i], "wf.") === false) {
-                $tvnames[] = $matches[1][$i];
-            }
-        }
-
-        if (count($tvnames) >= 1) {
-            return array_unique($tvnames);
-        } else {
-            return false;
-        }
-    }
-    */
-
-	public function findTemplateVars($tpl) {
+    public function findTemplateVars($tpl) {
         preg_match_all('~\[\[\+(.*?)\]\]~', $tpl, $matches);
         $TVs = array();
         foreach($matches[1] as $tv) {
@@ -714,7 +673,7 @@ class Wayfinder {
         } else {
             return false;
         }
-	}
+    }
 
 
     /**
