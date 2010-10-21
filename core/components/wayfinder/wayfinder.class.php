@@ -446,7 +446,8 @@ class Wayfinder {
             }
 
             /* get resource groups for current user */
-            if ($docgrp = $this->modx->getUserDocGroups()) $docgrp = implode(",",$docgrp);
+            $docgrp = $this->modx->getUserDocGroups();
+            if (!empty($docgrp)) $docgrp = implode(',',$docgrp);
 
             /* build query */
             if ($this->modx->isFrontend()) {
@@ -457,7 +458,7 @@ class Wayfinder {
                     $c->where(array('document_group IN('.$docgrp.')'));
                 }
             }
-            $c->where(array('modResource.id IN('.implode(',', $ids).')'));
+            $c->where(array('modResource.id:IN' =>  $ids));
             $c->where(array('modResource.published:=' => 1));
             $c->where(array('modResource.deleted:=' => 0));
             $c->groupby('modResource.id');
