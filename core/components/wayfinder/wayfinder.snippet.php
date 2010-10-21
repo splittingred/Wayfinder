@@ -28,7 +28,7 @@ if (isset($scriptProperties['config'])) {
     $scriptProperties['config'] = $wayfinder_base.'configs/default.config.php';
 }
 if (file_exists($scriptProperties['config'])) {
-	include_once $scriptProperties['config'];
+    include_once $scriptProperties['config'];
 }
 
 /* include wayfinder class */

@@ -279,5 +279,12 @@ $properties = array(
         'options' => '',
         'value' => '',
     ),
+    array(
+        'name' => 'permissions',
+        'desc' => '',
+        'type' => 'textfield',
+        'options' => '',
+        'value' => 'list',
+    ),
 );
 return $properties;

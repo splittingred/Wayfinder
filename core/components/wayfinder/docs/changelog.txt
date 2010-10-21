@@ -1,6 +1,9 @@
 Changelog for Wayfinder (for Revolution).
 
-getResources 2.1.1-beta5 ($LastChangedRevision: 615 $, $LastChangedDate: 2009-12-29 13:36:25 -0600 (Tue, 29 Dec 2009) $)
+Wayfinder 2.1.1
 ====================================
+- Fixed issues with PDO statements
+- Added the missing permissions check
+- Added wayfinder parameter "permissions" - default to "list", empty to bypass permissions check
 - [#WAYFINDER-20] TemplateVariables not rendering in Wayfinder templates.
 - Added changelog.
