@@ -1,5 +1,9 @@
 Changelog for Wayfinder (for Revolution).
 
+Wayfinder 2.1.2
+====================================
+- Fixed bug with includeDocs parameter
+
 Wayfinder 2.1.1
 ====================================
 - Wayfinder now properly uses MODx parsing system

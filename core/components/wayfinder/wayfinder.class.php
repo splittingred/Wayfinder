@@ -424,9 +424,8 @@ class Wayfinder {
                 $c->where(array('hidemenu:=' => 0));
             }
 
-            /* add the include resources to the where clause */
+            /* if set, limit results to specific resources */
             if (!empty($this->_config['includeDocs'])) {
-                $ids = array_merge($ids,explode(',',$this->_config['includeDocs']));
             }
 
             /* add the exclude resources to the where clause */
