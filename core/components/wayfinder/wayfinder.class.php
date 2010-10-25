@@ -426,6 +426,7 @@ class Wayfinder {
 
             /* if set, limit results to specific resources */
             if (!empty($this->_config['includeDocs'])) {
+                $c->where(array('modResource.id:IN' => explode(',',$this->_config['includeDocs'])));
             }
 
             /* add the exclude resources to the where clause */
