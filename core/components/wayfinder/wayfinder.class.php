@@ -67,6 +67,7 @@ class Wayfinder {
             'titleOfLinks' => 'pagetitle',
             'displayStart' => false,
             'permissions' => 'list',
+            'hereId' => $this->modx->resource->get('id'),
         ),$config);
 
         if (isset($config['sortOrder'])) {
@@ -84,8 +85,8 @@ class Wayfinder {
      */
     public function run() {
         /* setup here checking array */
-        $this->parentTree = $this->modx->getParentIds($this->modx->resource->get('id'));
-        $this->parentTree[] = $this->modx->resource->get('id');
+        $this->parentTree = $this->modx->getParentIds($this->_config['hereId']);
+        $this->parentTree[] = $this->_config['hereId'];
 
         if (!empty($this->_config['debug'])) {
             $this->addDebugInfo('settings', 'Settings', 'Settings', 'Settings used to create this menu.', $this->_config);
@@ -217,11 +218,11 @@ class Wayfinder {
         /* determine which template to use */
         if ($this->_config['displayStart'] && $resource['level'] == 0) {
             $usedTemplate = 'startItemTpl';
-        } elseif ($resource['id'] == $this->modx->resource->get('id') && $resource['isfolder'] && $this->_templates['parentRowHereTpl'] && ($resource['level'] < $this->_config['level'] || $this->_config['level'] == 0) && $numChildren) {
+        } elseif ($resource['id'] == $this->_config['hereId'] && $resource['isfolder'] && $this->_templates['parentRowHereTpl'] && ($resource['level'] < $this->_config['level'] || $this->_config['level'] == 0) && $numChildren) {
             $usedTemplate = 'parentRowHereTpl';
-        } elseif ($resource['id'] == $this->modx->resource->get('id') && $this->_templates['innerHereTpl'] && $resource['level'] > 1) {
+        } elseif ($resource['id'] == $this->_config['hereId'] && $this->_templates['innerHereTpl'] && $resource['level'] > 1) {
             $usedTemplate = 'innerHereTpl';
-        } elseif ($resource['id'] == $this->modx->resource->get('id') && $this->_templates['hereTpl']) {
+        } elseif ($resource['id'] == $this->_config['hereId'] && $this->_templates['hereTpl']) {
             $usedTemplate = 'hereTpl';
         } elseif ($resource['isfolder'] && $this->_templates['activeParentRowTpl'] && ($resource['level'] < $this->_config['level'] || $this->_config['level'] == 0) && $this->isHere($resource['id'])) {
             $usedTemplate = 'activeParentRowTpl';
@@ -344,7 +345,7 @@ class Wayfinder {
                 $hasClass = 1;
             }
             /* set self class if specified */
-            if (!empty($this->_css['self']) && $docId == $this->modx->resource->id) {
+            if (!empty($this->_css['self']) && $docId == $this->_config['hereId']) {
                 $returnClass .= $hasClass ? ' ' . $this->_css['self'] : $this->_css['self'];
                 $hasClass = 1;
             }
