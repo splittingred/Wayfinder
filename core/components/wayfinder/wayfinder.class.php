@@ -67,8 +67,10 @@ class Wayfinder {
             'titleOfLinks' => 'pagetitle',
             'displayStart' => false,
             'permissions' => 'list',
-            'hereId' => $this->modx->resource->get('id'),
         ),$config);
+        if (empty($this->_config['hereId'])) {
+            $this->_config['hereId'] = $this->modx->resource->get('id');
+        }
 
         if (isset($config['sortOrder'])) {
             $this->_config['sortOrder'] = strtoupper($config['sortOrder']);
@@ -253,15 +255,15 @@ class Wayfinder {
 
         //mod by Bruno
         foreach ($this->placeHolders['rowLevel'] as $key=>$rowlevelPh){
-        	$placeholders[$rowlevelPh]=$phArray[$key];
+            $placeholders[$rowlevelPh]=$phArray[$key];
         }
-		//end mod
+        //end mod
 		
-		if (!empty($this->tvList)) {
+        if (!empty($this->tvList)) {
             $usePlaceholders = array_merge($this->placeHolders['rowLevel'],$this->placeHolders['tvs']);
             foreach ($this->tvList as $tvName) {
                 $phArray[] = $resource[$tvName];
-				$placeholders[$tvName]=$resource[$tvName];//mod by Bruno
+                $placeholders[$tvName]=$resource[$tvName];//mod by Bruno
             }
         } else {
             $usePlaceholders = $this->placeHolders['rowLevel'];
@@ -276,11 +278,8 @@ class Wayfinder {
             $this->addDebugInfo("row","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were used when processing this document.",$debugDocInfo);
             $this->addDebugInfo("rowdata","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were retrieved from the database for this document.",$resource);
         }
-        /* process the row */
-        //$output .= str_replace($usePlaceholders,$phArray,$useChunk);mod by Bruno
-		
-		//echo'<pre>'.print_r($placeholders,true).'</pre>';
-		
+
+        /* process content as chunk */
         $chunk = $this->modx->newObject('modChunk');
         $chunk->setCacheable(false);
         $output .= $chunk->process($placeholders, $useChunk);		
@@ -438,6 +437,17 @@ class Wayfinder {
             /* add the limit to the query */
             if (!empty($this->_config['limit'])) {
                 $c->limit($this->_config['limit'], 0);
+            }
+
+            /* JSON where ability */
+            if (!empty($this->_config['where'])) {
+                $where = $this->modx->fromJSON($this->_config['where']);
+                $c->where($where);
+            }
+            if (!empty($this->_config['templates'])) {
+                $c->where(array(
+                    'template:IN' => explode(',',$this->_config['templates']),
+                ));
             }
 
             /* determine sorting */

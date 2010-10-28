@@ -286,5 +286,26 @@ $properties = array(
         'options' => '',
         'value' => 'list',
     ),
+    array(
+        'name' => 'hereId',
+        'desc' => '',
+        'type' => 'textfield',
+        'options' => '',
+        'value' => '',
+    ),
+    array(
+        'name' => 'where',
+        'desc' => '',
+        'type' => 'textfield',
+        'options' => '',
+        'value' => '',
+    ),
+    array(
+        'name' => 'templates',
+        'desc' => '',
+        'type' => 'textfield',
+        'options' => '',
+        'value' => '',
+    ),
 );
 return $properties;
