@@ -1,5 +1,9 @@
 Changelog for Wayfinder (for Revolution).
 
+Wayfinder 2.1.3
+====================================
+- Added hereId parameter for specifying the active location
+
 Wayfinder 2.1.2
 ====================================
 - Fixed bug with includeDocs parameter
