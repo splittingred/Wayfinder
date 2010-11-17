@@ -597,9 +597,9 @@ class Wayfinder {
                 if ($n === 'outerTpl') {
                     $this->_templates[$n] = '<ul[[+wf.classes]]>[[+wf.wrapper]]</ul>';
                 } elseif ($n === 'rowTpl') {
-                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title]]" [[+wf.attributes]]>[[+wf.linktext]]</a>[[+wf.wrapper]]</li>';
+                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title:htmlent]]" [[+wf.attributes]]>[[+wf.linktext:htmlent]]</a>[[+wf.wrapper]]</li>';
                 } elseif ($n === 'startItemTpl') {
-                    $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext]]</h2>[[+wf.wrapper]]';
+                    $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext:htmlent]]</h2>[[+wf.wrapper]]';
                 } else {
                     $this->_templates[$n] = false;
                 }
