@@ -158,7 +158,7 @@ class Wayfinder {
             $docInfo['first'] = $firstItem;
             $firstItem = 0;
             /* determine if last item in group */
-            if ($counter == ($numSubItems) && $numSubItems > 1) {
+            if ($counter == ($numSubItems)) {
                 $docInfo['last'] = 1;
             } else {
                 $docInfo['last'] = 0;
