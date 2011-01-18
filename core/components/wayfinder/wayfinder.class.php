@@ -125,7 +125,7 @@ class Wayfinder {
             /* loop through each document group (grouped by parent resource) */
             foreach ($subDocs as $parentId => $docs) {
                 /* only process resource group, if starting at root, hidesubmenus is off, or is in current parenttree */
-                if (!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $parentId == 0) {
+                if (!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $level <= 1) {
                     /* build the output for the group of resources */
                     $menuPart = $this->buildSubMenu($docs,$level);
                     /* if at the top of the menu start the output, otherwise replace the wrapper with the submenu */
