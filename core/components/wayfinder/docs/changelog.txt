@@ -2,9 +2,10 @@ Changelog for Wayfinder (for Revolution).
 
 Wayfinder 2.1.3
 ====================================
-- Added templates parameter that accepts a comma-delimited list of template IDs to filter by
-- Added where parameter that accepts a JSON object for where conditions
-- Added hereId parameter for specifying the active location
+- [#14] Fix hideSubMenus property
+- Add templates parameter that accepts a comma-delimited list of template IDs to filter by
+- Add where parameter that accepts a JSON object for where conditions
+- Add hereId parameter for specifying the active location
 
 Wayfinder 2.1.2
 ====================================
