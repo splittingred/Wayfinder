@@ -26,6 +26,13 @@ $properties = array(
         'value' => '0',
     ),
     array(
+        'name' => 'contexts',
+        'desc' => '',
+        'type' => 'textfield',
+        'options' => '',
+        'value' => '',
+    ),
+    array(
         'name' => 'ph',
         'desc' => '',
         'type' => 'combo-boolean',

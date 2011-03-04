@@ -402,13 +402,49 @@ class Wayfinder {
     }
 
     /**
+     * Smarter getChildIds that will iterate across Contexts if needed
+     *
+     * @param integer $startId The ID which to start at
+     * @param integer $depth The depth in which to parse
+     */
+    public function getChildIds($startId = 0,$depth = 10) {
+        $ids = array();
+        $contexts = explode(',',$this->_config['contexts']);
+        $contexts = array_unique($contexts);
+        if (!empty($contexts)) {
+            $currentContext = $this->modx->context->get('key');
+            $activeContext = $currentContext;
+            $switched = false;
+            foreach ($contexts as $context) {
+                if ($context != $currentContext) {
+                    $this->modx->switchContext($context);
+                    $switched = true;
+                    $currentContext = $context;
+                }
+                /* use modx->getChildIds here, since we dont need to switch contexts within resource children */
+                $contextIds = $this->modx->getChildIds($startId,$depth);
+                if (!empty($contextIds)) {
+                    $ids = array_merge($ids,$contextIds);
+                }
+            }
+            $ids = array_unique($ids);
+            if ($switched) { /* make sure to switch back to active context */
+                $this->modx->switchContext($activeContext);
+            }
+        } else { /* much faster if not using contexts */
+            $ids = $this->modx->getChildIds($startId,$depth);
+        }
+        return $ids;
+    }
+
+    /**
      * Get the required resources from the database to build the menu
      *
      * @return array The resource array of documents to be processed
      */
     public function getData() {
         $depth = !empty($this->_config['level']) ? $this->_config['level'] : 10;
-        $ids = $this->modx->getChildIds($this->_config['id'],$depth);
+        $ids = $this->getChildIds($this->_config['id'],$depth);
 
         /* get all of the ids for processing */
         if ($this->_config['displayStart'] && $this->_config['id'] !== 0) {
@@ -430,19 +466,28 @@ class Wayfinder {
             }
 
             /* add the exclude resources to the where clause */
+            if (!empty($this->_config['contexts'])) {
+                $c->where(array('modResource.context_key:IN' => explode(',',$this->_config['contexts'])));
+                $c->sortby('context_key','DESC');
+            }
+
+            /* add the exclude resources to the where clause */
             if (!empty($this->_config['excludeDocs'])) {
-                $c->where(array('modResource.id NOT IN('.$this->_config['excludeDocs'].')'));
+                $c->where(array('modResource.id:NOT IN' => explode(',',$this->_config['excludeDocs'])));
             }
 
             /* add the limit to the query */
             if (!empty($this->_config['limit'])) {
-                $c->limit($this->_config['limit'], 0);
+                $offset = !empty($this->_config['offset']) ? $this->_config['offset'] : 0;
+                $c->limit($this->_config['limit'], $offset);
             }
 
             /* JSON where ability */
             if (!empty($this->_config['where'])) {
                 $where = $this->modx->fromJSON($this->_config['where']);
-                $c->where($where);
+                if (!empty($where)) {
+                    $c->where($where);
+                }
             }
             if (!empty($this->_config['templates'])) {
                 $c->where(array(
@@ -457,20 +502,6 @@ class Wayfinder {
                 $c->sortby($this->_config['sortBy'],$this->_config['sortOrder']);
             }
 
-            /* get resource groups for current user */
-            $docgrp = $this->modx->getUserDocGroups();
-            if (!empty($docgrp)) $docgrp = implode(',',$docgrp);
-
-            /* build query */
-            if ($this->modx->isFrontend()) {
-                // this is deprecated and should be ignored; checkPolicy handles this now
-                //$c->where(array('privateweb:=' => 0));
-            } else {
-                $c->where(array('1:=' => $_SESSION['mgrRole'], 'privatemgr:=' => 0), xPDOQuery::SQL_OR);
-                if (!empty($docgrp)) {
-                    $c->where(array('document_group IN('.$docgrp.')'));
-                }
-            }
             $c->where(array('modResource.id:IN' =>  $ids));
             $c->where(array('modResource.published:=' => 1));
             $c->where(array('modResource.deleted:=' => 0));
@@ -486,12 +517,36 @@ class Wayfinder {
             if ($this->_config['id'] == 0) {
                 $startLevel = 0;
             } else {
-                $startLevel = count($this->modx->getParentIds($this->_config['id']));
+                $activeContext = $this->modx->context->get('key');
+                $contexts = !empty($this->_config['contexts']) ? explode(',',$this->_config['contexts']) : array();
+                /* switching ctx, as this startId may not be in current Context */
+                if (!empty($this->_config['startIdContext'])) {
+                    $this->modx->switchContext($this->_config['startIdContext']);
+                    $startLevel = count($this->modx->getParentIds($this->_config['id']));
+                    $this->modx->switchContext($activeContext);
+
+                /* attempt to auto-find startId context if &contexts param only has one context */
+                } else if (!empty($contexts) && $contexts[0] != $activeContext) {
+                    $this->modx->switchContext($contexts[0]);
+                    $startLevel = count($this->modx->getParentIds($this->_config['id']));
+                    $this->modx->switchContext($activeContext);
+
+                } else {
+                    $startLevel = count($this->modx->getParentIds($this->_config['id']));
+                }
             }
             $resultIds = array();
 
+            $activeContext = $this->modx->context->get('key');
+            $currentContext = $activeContext;
+            $switchedContext = false;
             foreach ($result as $doc)  {
-		if ((!empty($this->_config['permissions'])) && (!$doc->checkPolicy($this->_config['permissions']))) continue;
+                if ($doc->get('context_key') != $currentContext) {
+                    $this->modx->switchContext($doc->get('context_key'));
+                    $switchedContext = true;
+                    $currentContext = $doc->get('context_key');
+                }
+		        if ((!empty($this->_config['permissions'])) && (!$doc->checkPolicy($this->_config['permissions']))) continue;
                 $tempDocInfo = $doc->toArray();
                 $resultIds[] = $tempDocInfo['id'];
                 $tempDocInfo['content'] = $tempDocInfo['class_key'] == 'modWebLink' ? $tempDocInfo['content'] : '';
@@ -546,6 +601,9 @@ class Wayfinder {
                     }
                     $resourceArray[$tempDocInfo['level']][$tempDocInfo['parent']][] = $tempDocInfo;
                 }
+            }
+            if ($switchedContext) {
+                $this->modx->switchContext($activeContext);
             }
         }
         return $resourceArray;

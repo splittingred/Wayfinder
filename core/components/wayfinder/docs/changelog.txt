@@ -1,5 +1,9 @@
 Changelog for Wayfinder (for Revolution).
 
+Wayfinder 2.2.0
+====================================
+- [#8] Add &contexts parameter, and &startIdContext parameter if navigating across multiple contexts and using a non-0 &startId
+
 Wayfinder 2.1.3
 ====================================
 - [#14] Fix hideSubMenus property
