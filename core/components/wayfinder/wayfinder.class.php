@@ -102,24 +102,24 @@ class Wayfinder {
             $this->regJsCss();
         }
         /* check for cached files */
-		$this->cacheManagerObject = $this->modx->getCacheManager();
+		$cacheManager = $this->modx->getCacheManager();
 		$wayfinderCache = $hasChildrenCache = array();
-		$wayfinderCache = $this->cacheManagerObject->get('wayfinderCache');
-		$hasChildrenCache = $this->cacheManagerObject->get('hasChildrenCache');
+		$wayfinderCache = $cacheManager->get('wayfinderCache');
+		$hasChildrenCache = $cacheManager->get('hasChildrenCache');
         if((count($wayfinderCache) > 0) && (count($hasChildrenCache) > 0)) {
 			/* cache files are set */
 			$this->docs = $wayfinderCache;
-			$this->hasChildren = $this->cacheManagerObject->get('hasChildrenCache');
+			$this->hasChildren = $hasChildrenCache;
 		} else {
 			/* cache files not set - get all of the resources */
 			$this->docs = $this->getData();
 			/* set cache files */
 			$cacheName = 'wayfinderCache';
 			$cacheValue = $this->docs;
-			$this->cacheManagerObject->set($cacheName,$cacheValue);
+			$cacheManager->set($cacheName,$cacheValue);
 			$cacheNameB = 'hasChildrenCache';
 			$cacheValueB = $this->hasChildren;
-			$this->cacheManagerObject->set($cacheNameB,$cacheValueB);
+			$cacheManager->set($cacheNameB,$cacheValueB);
 		}
         if (!empty($this->docs)) {
             /* sort resources by level for proper wrapper substitution */
