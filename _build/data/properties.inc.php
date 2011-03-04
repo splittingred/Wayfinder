@@ -33,6 +33,20 @@ $properties = array(
         'value' => '',
     ),
     array(
+        'name' => 'cacheResults',
+        'desc' => '',
+        'type' => 'combo-boolean',
+        'options' => '',
+        'value' => true,
+    ),
+    array(
+        'name' => 'cacheTime',
+        'desc' => '',
+        'type' => 'textfield',
+        'options' => '',
+        'value' => 3600,
+    ),
+    array(
         'name' => 'ph',
         'desc' => '',
         'type' => 'combo-boolean',

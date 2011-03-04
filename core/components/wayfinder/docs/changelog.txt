@@ -2,6 +2,7 @@ Changelog for Wayfinder (for Revolution).
 
 Wayfinder 2.2.0
 ====================================
+- [#22] Add &cacheResults parameter, which caches queries for faster loading
 - [#8] Add &contexts parameter, and &startIdContext parameter if navigating across multiple contexts and using a non-0 &startId
 
 Wayfinder 2.1.3

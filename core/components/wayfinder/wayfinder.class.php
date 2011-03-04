@@ -42,6 +42,7 @@ class Wayfinder {
     );
     public $tvList = array ();
     public $debugInfo = array ();
+    private $_cached = false;
 
     function __construct(modX &$modx,array $config = array()) {
         $this->modx =& $modx;
@@ -101,15 +102,46 @@ class Wayfinder {
         if ($this->_config['cssTpl'] || $this->_config['jsTpl']) {
             $this->regJsCss();
         }
-        /* get all of the resources */
-        $this->docs = $this->getData();
-        if (!empty ($this->docs)) {
+        /* check for cached files */
+        $cacheResults = $this->modx->getOption('cacheResults',$this->_config,true);
+        if ($cacheResults) {
+            $this->modx->getCacheManager();
+            /* generate a UID based on the params passed to Wayfinder and the resource ID */
+            $uid = $this->modx->resource->get('id').'-'.base64_encode(serialize($this->_config));
+
+            /* get us some caching keys */
+            $cacheKey = !empty($this->_config['cacheKey']) ? $this->config['cacheKey'] : $uid;
+            $childrenCacheKey = !empty($this->_config['childrenCacheKey']) ? $this->config['childrenCacheKey'] : $uid;
+            /* for some reason cacheManager dies with too long of cache names. so lets md5 here to shorten them. */
+            $cacheKey = 'wayfinder/cache-'.md5($cacheKey);
+            $childrenCacheKey = 'wayfinder/cache-children-'.md5($childrenCacheKey);
+
+            /* check for cache */
+            $cache = $this->modx->cacheManager->get($cacheKey);
+            $childrenCache = $this->modx->cacheManager->get($childrenCacheKey);
+        }
+        if ($cacheResults && !empty($cache) && !empty($childrenCache)) {
+			/* cache files are set */
+			$this->docs = $cache;
+			$this->hasChildren = $childrenCache;
+            $this->_cached = true;
+        } else {
+            /* cache files not set - get all of the resources */
+            $this->docs = $this->getData();
+            /* set cache files */
+            if ($cacheResults) {
+                $cacheTime = $this->modx->getOption('cacheTime',$this->_config,3600);
+                $this->modx->cacheManager->set($cacheKey,$this->docs,$cacheTime);
+                $this->modx->cacheManager->set($childrenCacheKey,$this->hasChildren,$cacheTime);
+            }
+        }
+        if (!empty($this->docs)) {
             /* sort resources by level for proper wrapper substitution */
             ksort($this->docs);
             /* build the menu */
             return $this->buildMenu();
         } else {
-            $noneReturn = $this->_config['debug'] ? '<p style="color:red">No resources found for menu.</p>' : '';
+            $noneReturn = $this->_config['debug'] ? '<p>No resources found for menu.</p>' : '';
             return $noneReturn;
         }
     }
@@ -120,12 +152,13 @@ class Wayfinder {
      * @return string The HTML for the menu
      */
     public function buildMenu() {
+        $output = '';
         /* loop through all of the menu levels */
         foreach ($this->docs as $level => $subDocs) {
             /* loop through each document group (grouped by parent resource) */
             foreach ($subDocs as $parentId => $docs) {
                 /* only process resource group, if starting at root, hidesubmenus is off, or is in current parenttree */
-                if (!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $level <= 1) {
+                if (!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $parentId == 0) {
                     /* build the output for the group of resources */
                     $menuPart = $this->buildSubMenu($docs,$level);
                     /* if at the top of the menu start the output, otherwise replace the wrapper with the submenu */
@@ -158,7 +191,7 @@ class Wayfinder {
             $docInfo['first'] = $firstItem;
             $firstItem = 0;
             /* determine if last item in group */
-            if ($counter == ($numSubItems)) {
+            if ($counter == ($numSubItems) && $numSubItems > 1) {
                 $docInfo['last'] = 1;
             } else {
                 $docInfo['last'] = 0;
@@ -475,7 +508,7 @@ class Wayfinder {
             if (!empty($this->_config['excludeDocs'])) {
                 $c->where(array('modResource.id:NOT IN' => explode(',',$this->_config['excludeDocs'])));
             }
-
+            
             /* add the limit to the query */
             if (!empty($this->_config['limit'])) {
                 $offset = !empty($this->_config['offset']) ? $this->_config['offset'] : 0;
@@ -578,7 +611,6 @@ class Wayfinder {
                 $useTextField = (empty($tempDocInfo[$this->_config['textOfLinks']])) ? 'pagetitle' : $this->_config['textOfLinks'];
                 $tempDocInfo['linktext'] = $tempDocInfo[$useTextField];
                 $tempDocInfo['title'] = $tempDocInfo[$this->_config['titleOfLinks']];
-                /* if TVs were specified keep array flat otherwise array becomes level->parent->doc */
                 if (!empty($this->tvList)) {
                     $tempResults[] = $tempDocInfo;
                 } else {
@@ -655,9 +687,9 @@ class Wayfinder {
                 if ($n === 'outerTpl') {
                     $this->_templates[$n] = '<ul[[+wf.classes]]>[[+wf.wrapper]]</ul>';
                 } elseif ($n === 'rowTpl') {
-                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title:htmlent]]" [[+wf.attributes]]>[[+wf.linktext:htmlent]]</a>[[+wf.wrapper]]</li>';
+                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title]]" [[+wf.attributes]]>[[+wf.linktext]]</a>[[+wf.wrapper]]</li>';
                 } elseif ($n === 'startItemTpl') {
-                    $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext:htmlent]]</h2>[[+wf.wrapper]]';
+                    $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext]]</h2>[[+wf.wrapper]]';
                 } else {
                     $this->_templates[$n] = false;
                 }
