@@ -282,13 +282,13 @@ class Wayfinder {
         } else {
             $useId = '';
         }
-        /* load row values into placholder array */
+        /* load row values into placeholder array */
         $phArray = array($useSub,$useClass,$classNames,$resource['link'],$resource['title'],$resource['linktext'],$useId,$resource['link_attributes'],$resource['id'],$resource['introtext'],$resource['description'],$numChildren);
         /* if TVs are used add them to the placeholder array */
 
         //mod by Bruno
-        foreach ($this->placeHolders['rowLevel'] as $key=>$rowlevelPh){
-            $placeholders[$rowlevelPh]=$phArray[$key];
+        foreach ($this->placeHolders['rowLevel'] as $key=>$rowLevelPh){
+            $placeholders[$rowLevelPh]=$phArray[$key];
         }
         //end mod
 		
@@ -311,7 +311,6 @@ class Wayfinder {
             $this->addDebugInfo("row","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were used when processing this document.",$debugDocInfo);
             $this->addDebugInfo("rowdata","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were retrieved from the database for this document.",$resource);
         }
-
         /* process content as chunk */
         $chunk = $this->modx->newObject('modChunk');
         $chunk->setCacheable(false);
@@ -538,7 +537,10 @@ class Wayfinder {
             $c->where(array('modResource.id:IN' =>  $ids));
             $c->where(array('modResource.published:=' => 1));
             $c->where(array('modResource.deleted:=' => 0));
-            $c->groupby($this->modx->getSelectColumns('modResource','modResource','',array('id')));
+
+            /* not sure why this groupby is here in the first place. removing for now as it causes
+             * issues with the sortby clauses */
+            //$c->groupby($this->modx->getSelectColumns('modResource','modResource','',array('id')));
 
             $result = $this->modx->getCollection('modResource', $c);
 
