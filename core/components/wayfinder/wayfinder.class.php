@@ -101,9 +101,27 @@ class Wayfinder {
         if ($this->_config['cssTpl'] || $this->_config['jsTpl']) {
             $this->regJsCss();
         }
-        /* get all of the resources */
-        $this->docs = $this->getData();
-        if (!empty ($this->docs)) {
+        /* check for cached files */
+		$this->cacheManagerObject = $this->modx->getCacheManager();
+		$wayfinderCache = $hasChildrenCache = array();
+		$wayfinderCache = $this->cacheManagerObject->get('wayfinderCache');
+		$hasChildrenCache = $this->cacheManagerObject->get('hasChildrenCache');
+        if((count($wayfinderCache) > 0) && (count($hasChildrenCache) > 0)) {
+			/* cache files are set */
+			$this->docs = $wayfinderCache;
+			$this->hasChildren = $this->cacheManagerObject->get('hasChildrenCache');
+		} else {
+			/* cache files not set - get all of the resources */
+			$this->docs = $this->getData();
+			/* set cache files */
+			$cacheName = 'wayfinderCache';
+			$cacheValue = $this->docs;
+			$this->cacheManagerObject->set($cacheName,$cacheValue);
+			$cacheNameB = 'hasChildrenCache';
+			$cacheValueB = $this->hasChildren;
+			$this->cacheManagerObject->set($cacheNameB,$cacheValueB);
+		}
+        if (!empty($this->docs)) {
             /* sort resources by level for proper wrapper substitution */
             ksort($this->docs);
             /* build the menu */
@@ -125,7 +143,7 @@ class Wayfinder {
             /* loop through each document group (grouped by parent resource) */
             foreach ($subDocs as $parentId => $docs) {
                 /* only process resource group, if starting at root, hidesubmenus is off, or is in current parenttree */
-                if (!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $level <= 1) {
+                if (!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $parentId == 0) {
                     /* build the output for the group of resources */
                     $menuPart = $this->buildSubMenu($docs,$level);
                     /* if at the top of the menu start the output, otherwise replace the wrapper with the submenu */
@@ -151,14 +169,14 @@ class Wayfinder {
         $subMenuOutput = '';
         $firstItem = 1;
         $counter = 1;
-        $numSubItems = count($menuDocs);
+        $numSubItems = count($menuDocs);;
         /* loop through each resource to render output */
         foreach ($menuDocs as $docId => $docInfo) {
             $docInfo['level'] = $level;
             $docInfo['first'] = $firstItem;
             $firstItem = 0;
             /* determine if last item in group */
-            if ($counter == ($numSubItems)) {
+            if ($counter == ($numSubItems) && $numSubItems > 1) {
                 $docInfo['last'] = 1;
             } else {
                 $docInfo['last'] = 0;
@@ -416,7 +434,8 @@ class Wayfinder {
         }
         if (!empty($ids)) {
             $c = $this->modx->newQuery('modResource');
-            $c->leftJoin('modResourceGroupResource','ResourceGroupResources');
+        
+			$c->leftJoin('modResourceGroupResource','ResourceGroupResources');
             $c->query['distinct'] = 'DISTINCT';
 
             /* add the ignore hidden option to the where clause */
@@ -432,8 +451,8 @@ class Wayfinder {
             /* add the exclude resources to the where clause */
             if (!empty($this->_config['excludeDocs'])) {
                 $c->where(array('modResource.id NOT IN('.$this->_config['excludeDocs'].')'));
-            }
-
+            }			
+						
             /* add the limit to the query */
             if (!empty($this->_config['limit'])) {
                 $c->limit($this->_config['limit'], 0);
@@ -496,7 +515,7 @@ class Wayfinder {
                 $resultIds[] = $tempDocInfo['id'];
                 $tempDocInfo['content'] = $tempDocInfo['class_key'] == 'modWebLink' ? $tempDocInfo['content'] : '';
                 /* create the link */
-                $linkScheme = $this->_config['fullLink'] ? 'full' : '';
+				$linkScheme = $this->_config['fullLink'] ? 'full' : '';
                 if ($this->_config['useWeblinkUrl'] !== 'false' && $tempDocInfo['class_key'] == 'modWebLink') {
                     if (is_numeric($tempDocInfo['content'])) {
                         $tempDocInfo['link'] = $this->modx->makeUrl(intval($tempDocInfo['content']),'','',$linkScheme);
@@ -504,10 +523,14 @@ class Wayfinder {
                         $tempDocInfo['link'] = $tempDocInfo['content'];
                     }
                 } elseif ($tempDocInfo['id'] == $this->modx->getOption('site_start')) {
-                    $tempDocInfo['link'] = $this->modx->getOption('site_url');
+                    $tempDocInfo['link'] = '';//$this->modx->getOption('site_url');
                 } else {
-                    $tempDocInfo['link'] = $this->modx->makeUrl($tempDocInfo['id'],'','',$linkScheme);
-                }
+                    if($this->modx->languagePreference == 1) {
+						$tempDocInfo['link'] = $this->modx->makeUrl($tempDocInfo['id'],'','',$linkScheme);
+					} else {
+						$tempDocInfo['link'] = $this->modx->makeUrl($tempDocInfo['id'],'','',$linkScheme);
+					}
+				}
                 /* determine the level, if parent has changed */
                 if ($prevParent !== $tempDocInfo['parent']) {
                     $level = count($this->modx->getParentIds($tempDocInfo['id'])) - $startLevel;
@@ -519,16 +542,15 @@ class Wayfinder {
                 /* set the level */
                 $tempDocInfo['level'] = $level;
                 $prevParent = $tempDocInfo['parent'];
-                /* determine other output options */
-                $useTextField = (empty($tempDocInfo[$this->_config['textOfLinks']])) ? 'pagetitle' : $this->_config['textOfLinks'];
-                $tempDocInfo['linktext'] = $tempDocInfo[$useTextField];
+                /* determine other output options */ 
+				$useTextField = (empty($tempDocInfo[$this->_config['textOfLinks']])) ? 'pagetitle' : $this->_config['textOfLinks'];
+				$tempDocInfo['linktext'] = $tempDocInfo[$useTextField];
                 $tempDocInfo['title'] = $tempDocInfo[$this->_config['titleOfLinks']];
-                /* if TVs were specified keep array flat otherwise array becomes level->parent->doc */
                 if (!empty($this->tvList)) {
-                    $tempResults[] = $tempDocInfo;
-                } else {
-                    $resourceArray[$tempDocInfo['level']][$tempDocInfo['parent']][] = $tempDocInfo;
-                }
+					$tempResults[] = $tempDocInfo;
+				} else {
+					$resourceArray[$tempDocInfo['level']][$tempDocInfo['parent']][] = $tempDocInfo;
+				}
             }
             /* process the tvs */
             if (!empty($this->tvList) && !empty($resultIds)) {
@@ -548,6 +570,7 @@ class Wayfinder {
                 }
             }
         }
+		
         return $resourceArray;
     }
 
@@ -597,9 +620,9 @@ class Wayfinder {
                 if ($n === 'outerTpl') {
                     $this->_templates[$n] = '<ul[[+wf.classes]]>[[+wf.wrapper]]</ul>';
                 } elseif ($n === 'rowTpl') {
-                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title:htmlent]]" [[+wf.attributes]]>[[+wf.linktext:htmlent]]</a>[[+wf.wrapper]]</li>';
+                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title]]" [[+wf.attributes]]>[[+wf.linktext]]</a>[[+wf.wrapper]]</li>';
                 } elseif ($n === 'startItemTpl') {
-                    $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext:htmlent]]</h2>[[+wf.wrapper]]';
+                    $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext]]</h2>[[+wf.wrapper]]';
                 } else {
                     $this->_templates[$n] = false;
                 }
