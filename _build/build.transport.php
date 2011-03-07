@@ -33,7 +33,7 @@ $modx->setLogTarget('ECHO');
 
 $modx->loadClass('transport.modPackageBuilder','',false, true);
 $builder = new modPackageBuilder($modx);
-$builder->createPackage('wayfinder','2.2.0','rc1');
+$builder->createPackage('wayfinder','2.2.0','pl');
 $builder->registerNamespace('wayfinder',false,true,'{core_path}components/wayfinder/');
 
 /* get the source from the actual snippet in your database

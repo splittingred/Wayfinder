@@ -441,9 +441,9 @@ class Wayfinder {
      */
     public function getChildIds($startId = 0,$depth = 10) {
         $ids = array();
-        $contexts = explode(',',$this->_config['contexts']);
-        $contexts = array_unique($contexts);
-        if (!empty($contexts)) {
+        if (!empty($this->_config['contexts'])) {
+            $contexts = explode(',',$this->_config['contexts']);
+            $contexts = array_unique($contexts);
             $currentContext = $this->modx->context->get('key');
             $activeContext = $currentContext;
             $switched = false;
@@ -561,7 +561,7 @@ class Wayfinder {
                     $this->modx->switchContext($activeContext);
 
                 /* attempt to auto-find startId context if &contexts param only has one context */
-                } else if (!empty($contexts) && $contexts[0] != $activeContext) {
+                } else if (!empty($contexts) && !empty($contexts[0]) && $contexts[0] != $activeContext) {
                     $this->modx->switchContext($contexts[0]);
                     $startLevel = count($this->modx->getParentIds($this->_config['id']));
                     $this->modx->switchContext($activeContext);
@@ -576,8 +576,9 @@ class Wayfinder {
             $currentContext = $activeContext;
             $switchedContext = false;
             foreach ($result as $doc)  {
-                if ($doc->get('context_key') != $currentContext) {
-                    $this->modx->switchContext($doc->get('context_key'));
+                $docContextKey = $doc->get('context_key');
+                if (!empty($docContextKey) && $docContextKey != $currentContext) {
+                    $this->modx->switchContext($docContextKey);
                     $switchedContext = true;
                     $currentContext = $doc->get('context_key');
                 }
@@ -636,7 +637,7 @@ class Wayfinder {
                     $resourceArray[$tempDocInfo['level']][$tempDocInfo['parent']][] = $tempDocInfo;
                 }
             }
-            if ($switchedContext) {
+            if (!empty($switchedContext)) {
                 $this->modx->switchContext($activeContext);
             }
         }
