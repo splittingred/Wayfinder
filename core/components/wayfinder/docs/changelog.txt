@@ -1,5 +1,9 @@
 Changelog for Wayfinder (for Revolution).
 
+Wayfinder 2.3.0
+====================================
+- Ensure that caching also caches by user ID to persist access permissions through cached result sets
+
 Wayfinder 2.2.0
 ====================================
 - [#23] Fix issue that generated error message in error.log due to &contexts always being processed regardless of empty state

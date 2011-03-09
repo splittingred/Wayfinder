@@ -106,8 +106,9 @@ class Wayfinder {
         $cacheResults = $this->modx->getOption('cacheResults',$this->_config,true);
         if ($cacheResults) {
             $this->modx->getCacheManager();
-            /* generate a UID based on the params passed to Wayfinder and the resource ID */
-            $uid = $this->modx->resource->get('id').'-'.base64_encode(serialize($this->_config));
+            /* generate a UID based on the params passed to Wayfinder and the resource ID
+             * and the User ID (so that permissions get correctly applied) */
+            $uid = $this->modx->resource->get('id').'-'.$this->modx->user->get('id').'-'.base64_encode(serialize($this->_config));
 
             /* get us some caching keys */
             $cacheKey = !empty($this->_config['cacheKey']) ? $this->config['cacheKey'] : $uid;
