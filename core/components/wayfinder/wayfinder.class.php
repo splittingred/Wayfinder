@@ -13,25 +13,11 @@ class Wayfinder {
     public $_config;
     public $_templates;
     public $_css;
-    public $modx;
+    public $modx = null;
     public $docs = array ();
     public $parentTree = array ();
     public $hasChildren = array ();
     public $placeHolders = array (
-        'rowLevel' => array (
-            'wf.wrapper',
-            'wf.classes',
-            'wf.classnames',
-            'wf.link',
-            'wf.title',
-            'wf.linktext',
-            'wf.id',
-            'wf.attributes',
-            'wf.docid',
-            'wf.introtext',
-            'wf.description',
-            'wf.subitemcount'
-        ),
         'wrapperLevel' => array (
             '[[+wf.wrapper]]',
             '[[+wf.classes]]',
@@ -43,6 +29,8 @@ class Wayfinder {
     public $tvList = array ();
     public $debugInfo = array ();
     private $_cached = false;
+    private $_cachedTVs = array();
+    private $_cacheKeys = array();
 
     function __construct(modX &$modx,array $config = array()) {
         $this->modx =& $modx;
@@ -106,34 +94,20 @@ class Wayfinder {
         $cacheResults = $this->modx->getOption('cacheResults',$this->_config,true);
         if ($cacheResults) {
             $this->modx->getCacheManager();
-            /* generate a UID based on the params passed to Wayfinder and the resource ID
-             * and the User ID (so that permissions get correctly applied) */
-            $uid = $this->modx->resource->get('id').'-'.$this->modx->user->get('id').'-'.base64_encode(serialize($this->_config));
-
-            /* get us some caching keys */
-            $cacheKey = !empty($this->_config['cacheKey']) ? $this->config['cacheKey'] : $uid;
-            $childrenCacheKey = !empty($this->_config['childrenCacheKey']) ? $this->config['childrenCacheKey'] : $uid;
-            /* for some reason cacheManager dies with too long of cache names. so lets md5 here to shorten them. */
-            $cacheKey = 'wayfinder/cache-'.md5($cacheKey);
-            $childrenCacheKey = 'wayfinder/cache-children-'.md5($childrenCacheKey);
-
-            /* check for cache */
-            $cache = $this->modx->cacheManager->get($cacheKey);
-            $childrenCache = $this->modx->cacheManager->get($childrenCacheKey);
+            $cache = $this->getFromCache();
+            if (!empty($cache) && !empty($cache['docs']) && !empty($cache['children'])) {
+                /* cache files are set */
+                $this->docs = $cache['docs'];
+                $this->hasChildren = $cache['children'];
+                $this->_cached = true;
+            }
         }
-        if ($cacheResults && !empty($cache) && !empty($childrenCache)) {
-			/* cache files are set */
-			$this->docs = $cache;
-			$this->hasChildren = $childrenCache;
-            $this->_cached = true;
-        } else {
+        if (empty($this->_cached)) {
             /* cache files not set - get all of the resources */
             $this->docs = $this->getData();
             /* set cache files */
             if ($cacheResults) {
-                $cacheTime = $this->modx->getOption('cacheTime',$this->_config,3600);
-                $this->modx->cacheManager->set($cacheKey,$this->docs,$cacheTime);
-                $this->modx->cacheManager->set($childrenCacheKey,$this->hasChildren,$cacheTime);
+                $this->setToCache();
             }
         }
         if (!empty($this->docs)) {
@@ -145,6 +119,55 @@ class Wayfinder {
             $noneReturn = $this->_config['debug'] ? '<p>No resources found for menu.</p>' : '';
             return $noneReturn;
         }
+    }
+
+    /**
+     * Attempt to get the result set from the cache
+     * 
+     * @return array Cached result set, if existent
+     */
+    public function getFromCache() {
+        $cacheKeys = $this->getCacheKeys();
+        /* check for cache */
+        $cache = array();
+        $cache['docs'] = $this->modx->cacheManager->get($cacheKeys['docs']);
+        $cache['children'] = $this->modx->cacheManager->get($cacheKeys['children']);
+        return $cache;
+    }
+
+    /**
+     * Set result-set data to cache
+     */
+    public function setToCache() {
+        $cacheKeys = $this->getCacheKeys();
+        $cacheTime = $this->modx->getOption('cacheTime',$this->_config,3600);
+        $this->modx->cacheManager->set($cacheKeys['docs'],$this->docs,$cacheTime);
+        $this->modx->cacheManager->set($cacheKeys['children'],$this->hasChildren,$cacheTime);
+        return true;
+    }
+
+    /**
+     * Generate an array of cache keys used by wayfinder caching
+     * @return array An array of cache keys
+     */
+    public function getCacheKeys() {
+        if (!empty($this->_cacheKeys)) return $this->_cacheKeys;
+        
+        /* generate a UID based on the params passed to Wayfinder and the resource ID
+         * and the User ID (so that permissions get correctly applied) */
+        $uid = $this->modx->resource->get('id').'-'.$this->modx->user->get('id').'-'.base64_encode(serialize($this->_config));
+
+        /* get us some caching keys */
+        $cacheKey = !empty($this->_config['cacheKey']) ? $this->_config['cacheKey'] : $uid;
+        $childrenCacheKey = !empty($this->_config['childrenCacheKey']) ? $this->_config['childrenCacheKey'] : $uid;
+        /* for some reason cacheManager dies with too long of cache names. so lets md5 here to shorten them. */
+        $cacheKey = 'wayfinder/cache-'.md5($cacheKey);
+        $childrenCacheKey = 'wayfinder/cache-children-'.md5($childrenCacheKey);
+        $this->_cacheKeys = array(
+            'docs' => $cacheKey,
+            'children' => $childrenCacheKey,
+        );
+        return $this->_cacheKeys;
     }
 
     /**
@@ -223,7 +246,7 @@ class Wayfinder {
             }
             /* get the class names for the wrapper */
             $classNames = $this->setItemClass($wrapperClass);
-            if ($classNames) $useClass = ' class="' . $classNames . '"';
+            $useClass = $classNames ? $useClass = ' class="' . $classNames . '"' : '';
             $phArray = array($subMenuOutput,$useClass,$classNames);
             /* process the wrapper */
             $subMenuOutput = str_replace($this->placeHolders['wrapperLevel'],$phArray,$useChunk);
@@ -233,8 +256,9 @@ class Wayfinder {
                 $debugDocInfo = array();
                 $debugDocInfo['template'] = $usedTemplate;
                 foreach ($this->placeHolders['wrapperLevel'] as $n => $v) {
-                    if ($v !== '[[+wf.wrapper]]')
+                    if ($v !== '[[+wf.wrapper]]') {
                         $debugDocInfo[$v] = $phArray[$n];
+                    }
                 }
                 $this->addDebugInfo("wrapper","{$debugParent}","Wrapper for items with parent {$debugParent}.","These fields were used when processing the wrapper for the following resources: ",$debugDocInfo);
             }
@@ -276,38 +300,39 @@ class Wayfinder {
         /* setup the new wrapper name and get the class names */
         $useSub = $resource['hasChildren'] ? "[[+wf.wrapper.{$resource['id']}]]" : "";
         $classNames = $this->setItemClass('rowcls',$resource['id'],$resource['first'],$resource['last'],$resource['level'],$resource['isfolder'],$resource['class_key']);
-        if ($classNames) $useClass = ' class="' . $classNames . '"';
+        $useClass = $classNames ? ' class="' . $classNames . '"' : '';
         /* setup the row id if a prefix is specified */
         if ($this->_config['rowIdPrefix']) {
             $useId = ' id="' . $this->_config['rowIdPrefix'] . $resource['id'] . '"';
         } else {
             $useId = '';
         }
-        /* load row values into placeholder array */
-        $phArray = array($useSub,$useClass,$classNames,$resource['link'],$resource['title'],$resource['linktext'],$useId,$resource['link_attributes'],$resource['id'],$resource['introtext'],$resource['description'],$numChildren);
-        /* if TVs are used add them to the placeholder array */
 
-        //mod by Bruno
-        foreach ($this->placeHolders['rowLevel'] as $key=>$rowLevelPh){
-            $placeholders[$rowLevelPh]=$phArray[$key];
+        /* set placeholders for row */
+        $placeholders = array();
+        foreach ($resource as $k => $v) {
+            $placeholders['wf.'.$k] = $v;
         }
-        //end mod
+        $placeholders['wf.wrapper'] = $useSub;
+        $placeholders['wf.classes'] = $useClass;
+        $placeholders['wf.classNames'] = $classNames;
+        $placeholders['wf.id'] = $useId;
+        $placeholders['wf.subitemcount'] = $numChildren;
 		
         if (!empty($this->tvList)) {
-            $usePlaceholders = array_merge($this->placeHolders['rowLevel'],$this->placeHolders['tvs']);
+            $usePlaceholders = array_merge($placeholders,$this->placeHolders['tvs']);
             foreach ($this->tvList as $tvName) {
-                $phArray[] = $resource[$tvName];
-                $placeholders[$tvName]=$resource[$tvName];//mod by Bruno
+                $placeholders[$tvName]=$resource[$tvName];
             }
         } else {
-            $usePlaceholders = $this->placeHolders['rowLevel'];
+            $usePlaceholders = $placeholders;
         }
         /* debug */
         if ($this->_config['debug']) {
             $debugDocInfo = array();
             $debugDocInfo['template'] = $usedTemplate;
             foreach ($usePlaceholders as $n => $v) {
-                $debugDocInfo[$v] = $phArray[$n];
+                $debugDocInfo[$v] = $placeholders[$n];
             }
             $this->addDebugInfo("row","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were used when processing this document.",$debugDocInfo);
             $this->addDebugInfo("rowdata","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were retrieved from the database for this document.",$resource);
@@ -315,7 +340,7 @@ class Wayfinder {
         /* process content as chunk */
         $chunk = $this->modx->newObject('modChunk');
         $chunk->setCacheable(false);
-        $output .= $chunk->process($placeholders, $useChunk);		
+        $output .= $chunk->process($placeholders, $useChunk);
 		
         /* return the row */
         return $output . $this->_config['nl'];
@@ -652,29 +677,21 @@ class Wayfinder {
      * @param array $docIds An array of document IDs to append the TV to
      * @return array A resource array with the TV information
      */
-    public function appendTV($tvname,$docIds){
+    public function appendTV($tvName,$docIds){
         $resourceArray = array();
-        foreach ($docIds as $docId) {
-            $templateVars = $this->modx->getTemplateVarOutput(array($tvname), $docId);
-            foreach ($templateVars as $key => $value) {
-                $resourceArray["#{$docId}"]["{$key}"] = $value;
+        if (empty($this->_cachedTVs[$tvName])) {
+            $tv = $this->modx->getObject('modTemplateVar',array(
+                'name' => $tvName,
+            ));
+        } else {
+            $tv =& $this->_cachedTVs[$tvName];
+        }
+        if ($tv) {
+            foreach ($docIds as $docId) {
+                $resourceArray["#{$docId}"][$tvName] = $tv->getValue($docId);
             }
         }
         return $resourceArray;
-    }
-
-    /**
-     * Get a list of all available TVs
-     *
-     * @return array An array of all available TV names
-     */
-    public function getTVList() {
-        $names = array();
-        $templateVars = $this->modx->getCollection('modTemplateVar');
-        foreach ($templateVars as $templateVar) {
-            $names[] = $templateVar->get('name');
-        }
-        return $names;
     }
 
     /**
@@ -710,13 +727,10 @@ class Wayfinder {
 
         if (!empty($nonWayfinderFields)) {
             $nonWayfinderFields = array_unique($nonWayfinderFields);
-            $allTvars = $this->getTVList();
 
             foreach ($nonWayfinderFields as $field) {
-                if (in_array($field, $allTvars)) {
-                    $this->placeHolders['tvs'][] = "{$field}";
-                    $this->tvList[] = $field;
-                }
+                $this->placeHolders['tvs'][] = "{$field}";
+                $this->tvList[] = $field;
             }
             if ($this->_config['debug']) { $this->addDebugInfo('tvars','tvs','Template Variables',"The following template variables were found in your templates.",$this->tvList); }
         }
@@ -729,8 +743,6 @@ class Wayfinder {
      * @return string|bool Template HTML or false if no template was found
      */
     public function fetch($tpl) {
-        $template = "";
-
         if ($chunk= $this->modx->getObject('modChunk', array ('name' => $tpl), true)) {
             $template = $chunk->getContent();
         } else if(substr($tpl, 0, 6) == "@FILE:") {

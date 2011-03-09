@@ -2,6 +2,8 @@ Changelog for Wayfinder (for Revolution).
 
 Wayfinder 2.3.0
 ====================================
+- Add all fields of a Resource to the rowTpl placeholder set, such as menutitle, published, etc
+- Properly optimize TV value grabbing to properly parse and cache TVs to improve load times when using TVs in a result set
 - Ensure that caching also caches by user ID to persist access permissions through cached result sets
 
 Wayfinder 2.2.0
