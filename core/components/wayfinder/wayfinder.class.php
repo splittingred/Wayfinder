@@ -181,16 +181,15 @@ class Wayfinder {
         foreach ($this->docs as $level => $subDocs) {
             /* loop through each document group (grouped by parent resource) */
             foreach ($subDocs as $parentId => $docs) {
-                /* only process resource group, if starting at root, hidesubmenus is off, or is in current parenttree */
-                if (!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $parentId == 0) {
-                    /* build the output for the group of resources */
-                    $menuPart = $this->buildSubMenu($docs,$level);
-                    /* if at the top of the menu start the output, otherwise replace the wrapper with the submenu */
-                    if (($level == 1 && (!$this->_config['displayStart'] || $this->_config['id'] == 0)) || ($level == 0 && $this->_config['displayStart'])) {
-                        $output = $menuPart;
-                    } else {
-                        $output = str_replace("[[+wf.wrapper.{$parentId}]]",$menuPart,$output);
-                    }
+                /* hide submenus if depth is greater than 1 and &hideSubMenus is 1 */
+                if ($level > 1 && $this->_config['hideSubMenus']) continue;
+                /* build the output for the group of resources */
+                $menuPart = $this->buildSubMenu($docs,$level);
+                /* if at the top of the menu start the output, otherwise replace the wrapper with the submenu */
+                if (($level == 1 && (!$this->_config['displayStart'] || $this->_config['id'] == 0)) || ($level == 0 && $this->_config['displayStart'])) {
+                    $output = $menuPart;
+                } else {
+                    $output = str_replace("[[+wf.wrapper.{$parentId}]]",$menuPart,$output);
                 }
             }
         }
@@ -343,7 +342,8 @@ class Wayfinder {
         $output .= $chunk->process($placeholders, $useChunk);
 		
         /* return the row */
-        return $output . $this->_config['nl'];
+        $separator = $this->modx->getOption('nl',$this->_config,"\n");
+        return $output . $separator;
     }
 
     /**
