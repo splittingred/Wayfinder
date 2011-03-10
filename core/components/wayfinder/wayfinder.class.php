@@ -181,15 +181,18 @@ class Wayfinder {
         foreach ($this->docs as $level => $subDocs) {
             /* loop through each document group (grouped by parent resource) */
             foreach ($subDocs as $parentId => $docs) {
-                /* hide submenus if depth is greater than 1 and &hideSubMenus is 1 */
-                if ($level > 1 && $this->_config['hideSubMenus']) continue;
-                /* build the output for the group of resources */
-                $menuPart = $this->buildSubMenu($docs,$level);
-                /* if at the top of the menu start the output, otherwise replace the wrapper with the submenu */
-                if (($level == 1 && (!$this->_config['displayStart'] || $this->_config['id'] == 0)) || ($level == 0 && $this->_config['displayStart'])) {
-                    $output = $menuPart;
-                } else {
-                    $output = str_replace("[[+wf.wrapper.{$parentId}]]",$menuPart,$output);
+                //if ($this->_config['startId'] != 0 && $this->_config['hideSubMenus']) continue;
+                /* only process resource group, if starting at root, hidesubmenus is off, or is in current parenttree */
+                if ((!$this->_config['hideSubMenus'] || $this->isHere($parentId) || $parentId == 0)) {
+
+                    /* build the output for the group of resources */
+                    $menuPart = $this->buildSubMenu($docs,$level);
+                    /* if at the top of the menu start the output, otherwise replace the wrapper with the submenu */
+                    if (($level == 1 && (!$this->_config['displayStart'] || $this->_config['id'] == 0)) || ($level == 0 && $this->_config['displayStart'])) {
+                        $output = $menuPart;
+                    } else {
+                        $output = str_replace("[[+wf.wrapper.{$parentId}]]",$menuPart,$output);
+                    }
                 }
             }
         }
@@ -315,7 +318,9 @@ class Wayfinder {
         $placeholders['wf.wrapper'] = $useSub;
         $placeholders['wf.classes'] = $useClass;
         $placeholders['wf.classNames'] = $classNames;
+        $placeholders['wf.classnames'] = $classNames;
         $placeholders['wf.id'] = $useId;
+        $placeholders['wf.docid'] = $resource['id'];
         $placeholders['wf.subitemcount'] = $numChildren;
 		
         if (!empty($this->tvList)) {
