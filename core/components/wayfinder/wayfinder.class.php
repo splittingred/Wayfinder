@@ -322,6 +322,7 @@ class Wayfinder {
         $placeholders['wf.id'] = $useId;
         $placeholders['wf.docid'] = $resource['id'];
         $placeholders['wf.subitemcount'] = $numChildren;
+        $placeholders['wf.attributes'] = $resource['link_attributes'];
 		
         if (!empty($this->tvList)) {
             $usePlaceholders = array_merge($placeholders,$this->placeHolders['tvs']);
