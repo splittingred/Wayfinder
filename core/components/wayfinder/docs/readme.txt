@@ -1,12 +1,12 @@
 ::::::::::::::::::::::::::::::::::::::::
  Snippet name: Wayfinder
  Short Desc: builds site navigation
- Version: 2.1.1-beta5 (Revolution-beta compatible)
+ Version: 2.3.0 (Revolution compatible)
  Authors: 
     Kyle Jaebker (muddydogpaws.com)
     Ryan Thrash (vertexworks.com)
- Date: May 1, 2008
-::::::::::::::::::::::::::::::::::::::::
+    Shaun McCormick (splittingred.com)
+ ::::::::::::::::::::::::::::::::::::::::
 Description:
     Totally refactored from original DropMenu nav builder to make it easier to
     create custom navigation by using chunks as output templates. By using templates,
