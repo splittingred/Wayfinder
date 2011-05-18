@@ -89,6 +89,17 @@ $properties = array(
         'value' => false,
     ),
     array(
+        'name' => 'scheme',
+        'desc' => '',
+        'type' => 'list',
+        'options' => array(
+            array('text' => '','value' => ''),
+            array('text' => 'abs','value' => 'abs'),
+            array('text' => 'full','value' => 'full'),
+        ),
+        'value' => '',
+    ),
+    array(
         'name' => 'sortOrder',
         'desc' => '',
         'type' => 'textfield',

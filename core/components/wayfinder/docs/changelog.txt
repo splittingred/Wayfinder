@@ -2,6 +2,7 @@ Changelog for Wayfinder (for Revolution).
 
 Wayfinder 2.3.1
 ====================================
+- [#31] Add &scheme property for specifying link schemes
 - [#27] Improve caching in Wayfinder to store cache files in resource cache so cache is synced with modx core caching
 
 Wayfinder 2.3.0
