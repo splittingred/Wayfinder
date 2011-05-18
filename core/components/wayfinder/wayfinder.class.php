@@ -31,6 +31,7 @@ class Wayfinder {
     private $_cached = false;
     private $_cachedTVs = array();
     private $_cacheKeys = array();
+    private $_cacheOptions = array();
 
     function __construct(modX &$modx,array $config = array()) {
         $this->modx =& $modx;
@@ -130,19 +131,20 @@ class Wayfinder {
         $cacheKeys = $this->getCacheKeys();
         /* check for cache */
         $cache = array();
-        $cache['docs'] = $this->modx->cacheManager->get($cacheKeys['docs']);
-        $cache['children'] = $this->modx->cacheManager->get($cacheKeys['children']);
+        $cache['docs'] = $this->modx->cacheManager->get($cacheKeys['docs'],$this->_cacheOptions);
+        $cache['children'] = $this->modx->cacheManager->get($cacheKeys['children'],$this->_cacheOptions);
         return $cache;
     }
 
     /**
      * Set result-set data to cache
+     * @return boolean
      */
     public function setToCache() {
         $cacheKeys = $this->getCacheKeys();
         $cacheTime = $this->modx->getOption('cacheTime',$this->_config,3600);
-        $this->modx->cacheManager->set($cacheKeys['docs'],$this->docs,$cacheTime);
-        $this->modx->cacheManager->set($cacheKeys['children'],$this->hasChildren,$cacheTime);
+        $this->modx->cacheManager->set($cacheKeys['docs'],$this->docs,$cacheTime,$this->_cacheOptions);
+        $this->modx->cacheManager->set($cacheKeys['children'],$this->hasChildren,$cacheTime,$this->_cacheOptions);
         return true;
     }
 
@@ -155,17 +157,19 @@ class Wayfinder {
         
         /* generate a UID based on the params passed to Wayfinder and the resource ID
          * and the User ID (so that permissions get correctly applied) */
-        $uid = $this->modx->resource->get('id').'-'.$this->modx->user->get('id').'-'.base64_encode(serialize($this->_config));
+        $cacheKey = 'wf-'.$this->modx->user->get('id').'-'.base64_encode(serialize($this->_config));
+        $childrenCacheKey = $cacheKey.'-children';
 
-        /* get us some caching keys */
-        $cacheKey = !empty($this->_config['cacheKey']) ? $this->_config['cacheKey'] : $uid;
-        $childrenCacheKey = !empty($this->_config['childrenCacheKey']) ? $this->_config['childrenCacheKey'] : $uid;
-        /* for some reason cacheManager dies with too long of cache names. so lets md5 here to shorten them. */
-        $cacheKey = 'wayfinder/cache-'.md5($cacheKey);
-        $childrenCacheKey = 'wayfinder/cache-children-'.md5($childrenCacheKey);
+        /* set cache keys to proper Resource cache so will sync with MODX core caching */
         $this->_cacheKeys = array(
-            'docs' => $cacheKey,
-            'children' => $childrenCacheKey,
+            'docs' => $this->modx->resource->getCacheKey().'/'.md5($cacheKey),
+            'children' => $this->modx->resource->getCacheKey().'/'.md5($childrenCacheKey),
+        );
+
+        $this->_cacheOptions = array(
+            'cache_key' => $this->modx->getOption('cache_resource_key',null, 'resource'),
+            'cache_handler' => $this->modx->getOption('cache_resource_handler', null, 'xPDOFileCache'),
+            'cache_expires' => (int)$this->modx->getOption('cache_expires', null, 0),
         );
         return $this->_cacheKeys;
     }
