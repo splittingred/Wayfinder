@@ -428,7 +428,7 @@ class Wayfinder {
     /**
      * Determine the "you are here" point in the menu
      *
-     * @param int Document ID to find
+     * @param $did Document ID to find
      * @return bool Returns true if the document ID was found
      */
     public function isHere($did) {
@@ -446,7 +446,7 @@ class Wayfinder {
             $jsCssDebug = array('js' => 'None Specified.', 'css' => 'None Specified.');
         }
         /* check and load the CSS */
-        if ($this->_config['cssTpl']) {
+        if (!empty($this->_config['cssTpl'])) {
             $cssChunk = $this->fetch($this->_config['cssTpl']);
             if ($cssChunk) {
                 $this->modx->regClientCSS($cssChunk);
@@ -456,7 +456,7 @@ class Wayfinder {
             }
         }
         /* check and load the Javascript */
-        if ($this->_config['jsTpl']) {
+        if (!empty($this->_config['jsTpl'])) {
             $jsChunk = $this->fetch($this->_config['jsTpl']);
             if ($jsChunk) {
                 $this->modx->regClientStartupScript($jsChunk);
@@ -474,6 +474,7 @@ class Wayfinder {
      *
      * @param integer $startId The ID which to start at
      * @param integer $depth The depth in which to parse
+     * @return array
      */
     public function getChildIds($startId = 0,$depth = 10) {
         $ids = array();

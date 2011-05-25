@@ -1,5 +1,9 @@
 Changelog for Wayfinder (for Revolution).
 
+Wayfinder 2.3.2
+====================================
+- Updated documentation, snippet properties descriptions
+
 Wayfinder 2.3.1
 ====================================
 - [#31] Add &scheme property for specifying link schemes
