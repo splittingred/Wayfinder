@@ -67,6 +67,10 @@ class Wayfinder {
         }
         if (isset($config['startId'])) { $this->_config['id'] = $config['startId']; }
         if (isset($config['removeNewLines'])) { $this->_config['nl'] = ''; }
+        
+        if (isset($this->_config['contexts'])) {
+            $this->_config['contexts'] = preg_replace('/,  +/', ',', $this->_config['contexts']);
+        }
     }
 
 
