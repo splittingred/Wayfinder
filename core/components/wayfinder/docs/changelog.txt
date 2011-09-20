@@ -2,6 +2,8 @@ Changelog for Wayfinder (for Revolution).
 
 Wayfinder 2.3.2
 ====================================
+- [#36] Fix issue with multiple Wayfinder calls using &config
+- [#35] Fix issues with TV bindings rendering
 - Add "protected" placeholder that is 1 if Resource is protected by a Resource Group
 - Updated documentation, snippet properties descriptions
 

@@ -17,6 +17,10 @@
  *
  * @example [[Wayfinder? &startId=`0`]]
  *
+ * @var modX $modx
+ * @var array $scriptProperties
+ * 
+ * @package wayfinder
  */
 $wayfinder_base = $modx->getOption('wayfinder.core_path',$scriptProperties,$modx->getOption('core_path').'components/wayfinder/');
 
@@ -28,7 +32,7 @@ if (isset($scriptProperties['config'])) {
     $scriptProperties['config'] = $wayfinder_base.'configs/default.config.php';
 }
 if (file_exists($scriptProperties['config'])) {
-    include_once $scriptProperties['config'];
+    include $scriptProperties['config'];
 }
 
 /* include wayfinder class */
