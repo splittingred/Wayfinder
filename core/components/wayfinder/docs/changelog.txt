@@ -2,6 +2,7 @@ Changelog for Wayfinder (for Revolution).
 
 Wayfinder 2.3.2
 ====================================
+- Add "protected" placeholder that is 1 if Resource is protected by a Resource Group
 - Updated documentation, snippet properties descriptions
 
 Wayfinder 2.3.1

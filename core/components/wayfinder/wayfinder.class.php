@@ -252,7 +252,7 @@ class Wayfinder {
             }
             /* get the class names for the wrapper */
             $classNames = $this->setItemClass($wrapperClass);
-            $useClass = $classNames ? $useClass = ' class="' . $classNames . '"' : '';
+            $useClass = $classNames ? ' class="' . $classNames . '"' : '';
             $phArray = array($subMenuOutput,$useClass,$classNames);
             /* process the wrapper */
             $subMenuOutput = str_replace($this->placeHolders['wrapperLevel'],$phArray,$useChunk);
@@ -346,7 +346,7 @@ class Wayfinder {
             $this->addDebugInfo("row","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were used when processing this document.",$debugDocInfo);
             $this->addDebugInfo("rowdata","{$resource['parent']}:{$resource['id']}","Doc: #{$resource['id']}","The following fields were retrieved from the database for this document.",$resource);
         }
-        /* process content as chunk */
+        /* @var modChunk $chunk process content as chunk */
         $chunk = $this->modx->newObject('modChunk');
         $chunk->setCacheable(false);
         $output .= $chunk->process($placeholders, $useChunk);
@@ -579,7 +579,12 @@ class Wayfinder {
              * issues with the sortby clauses */
             //$c->groupby($this->modx->getSelectColumns('modResource','modResource','',array('id')));
 
-            $result = $this->modx->getCollection('modResource', $c);
+            $c->select($this->modx->getSelectColumns('modResource','modResource'));
+            $c->select(array(
+                'protected' => 'ResourceGroupResources.document_group',
+            ));
+
+            $result = $this->modx->getIterator('modResource', $c);
 
 
             $resourceArray = array();
@@ -612,6 +617,7 @@ class Wayfinder {
             $activeContext = $this->modx->context->get('key');
             $currentContext = $activeContext;
             $switchedContext = false;
+            /** @var modResource $doc */
             foreach ($result as $doc)  {
                 $docContextKey = $doc->get('context_key');
                 if (!empty($docContextKey) && $docContextKey != $currentContext) {
@@ -653,6 +659,7 @@ class Wayfinder {
                 $useTextField = (empty($tempDocInfo[$this->_config['textOfLinks']])) ? 'pagetitle' : $this->_config['textOfLinks'];
                 $tempDocInfo['linktext'] = $tempDocInfo[$useTextField];
                 $tempDocInfo['title'] = $tempDocInfo[$this->_config['titleOfLinks']];
+                $tempDocInfo['protected'] = !empty($tempDocInfo['protected']);
                 if (!empty($this->tvList)) {
                     $tempResults[] = $tempDocInfo;
                 } else {
@@ -686,12 +693,13 @@ class Wayfinder {
     /**
      * Append a TV to the resource array
      *
-     * @param string $tvname Name of the Template Variable to append
+     * @param string $tvName Name of the Template Variable to append
      * @param array $docIds An array of document IDs to append the TV to
      * @return array A resource array with the TV information
      */
     public function appendTV($tvName,$docIds){
         $resourceArray = array();
+        /** @var modTemplateVar $tv */
         if (empty($this->_cachedTVs[$tvName])) {
             $tv = $this->modx->getObject('modTemplateVar',array(
                 'name' => $tvName,
@@ -721,7 +729,7 @@ class Wayfinder {
                 if ($n === 'outerTpl') {
                     $this->_templates[$n] = '<ul[[+wf.classes]]>[[+wf.wrapper]]</ul>';
                 } elseif ($n === 'rowTpl') {
-                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title]]" [[+wf.attributes]]>[[+wf.linktext]]</a>[[+wf.wrapper]]</li>';
+                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title]]" [[+wf.attributes]]>[[+wf.linktext]] - [[+wf.protected]]</a>[[+wf.wrapper]]</li>';
                 } elseif ($n === 'startItemTpl') {
                     $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext]]</h2>[[+wf.wrapper]]';
                 } else {
@@ -756,6 +764,7 @@ class Wayfinder {
      * @return string|bool Template HTML or false if no template was found
      */
     public function fetch($tpl) {
+        /** @var modChunk $chunk */
         if ($chunk= $this->modx->getObject('modChunk', array ('name' => $tpl), true)) {
             $template = $chunk->getContent();
         } else if(substr($tpl, 0, 6) == "@FILE:") {
