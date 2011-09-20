@@ -514,6 +514,7 @@ class Wayfinder {
     public function getData() {
         $depth = !empty($this->_config['level']) ? $this->_config['level'] : 10;
         $ids = $this->getChildIds($this->_config['id'],$depth);
+        $resourceArray = array();
 
         /* get all of the ids for processing */
         if ($this->_config['displayStart'] && $this->_config['id'] !== 0) {
@@ -709,7 +710,7 @@ class Wayfinder {
         }
         if ($tv) {
             foreach ($docIds as $docId) {
-                $resourceArray["#{$docId}"][$tvName] = $tv->getValue($docId);
+                $resourceArray["#{$docId}"][$tvName] = $tv->renderOutput($docId);
             }
         }
         return $resourceArray;
@@ -729,7 +730,7 @@ class Wayfinder {
                 if ($n === 'outerTpl') {
                     $this->_templates[$n] = '<ul[[+wf.classes]]>[[+wf.wrapper]]</ul>';
                 } elseif ($n === 'rowTpl') {
-                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title]]" [[+wf.attributes]]>[[+wf.linktext]] - [[+wf.protected]]</a>[[+wf.wrapper]]</li>';
+                    $this->_templates[$n] = '<li[[+wf.id]][[+wf.classes]]><a href="[[+wf.link]]" title="[[+wf.title]]" [[+wf.attributes]]>[[+wf.linktext]]</a>[[+wf.wrapper]]</li>';
                 } elseif ($n === 'startItemTpl') {
                     $this->_templates[$n] = '<h2[[+wf.id]][[+wf.classes]]>[[+wf.linktext]]</h2>[[+wf.wrapper]]';
                 } else {
