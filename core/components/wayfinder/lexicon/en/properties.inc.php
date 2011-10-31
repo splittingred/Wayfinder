@@ -50,6 +50,7 @@ $_lang['prop_wayfinder.permissions_desc'] = 'Will check for a permission on the 
 $_lang['prop_wayfinder.hereId_desc'] = 'Optional. If set, will change the "here" Resource to this ID. Defaults to the currently active Resource.';
 $_lang['prop_wayfinder.where_desc'] = 'Optional. A JSON object for where conditions for all items selected in the menu.';
 $_lang['prop_wayfinder.templates_desc'] = 'Optional. A comma-separated list of Template IDs to restrict selected Resources to.';
+$_lang['prop_wayfinder.previewunpublished_desc'] = 'Optional. If set to Yes, if you are logged into the mgr and have the view_unpublished permission, it will allow previewing of unpublished resources in your menus in the front-end.';
 
 $_lang['prop_wayfinder.ascending'] = 'Ascending';
 $_lang['prop_wayfinder.descending'] = 'Descending';

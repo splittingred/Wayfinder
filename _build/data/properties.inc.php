@@ -389,5 +389,13 @@ $properties = array(
         'value' => '',
         'lexicon' => 'wayfinder:properties',
     ),
+    array(
+        'name' => 'previewUnpublished',
+        'desc' => 'prop_wayfinder.previewunpublished_desc',
+        'type' => 'textfield',
+        'options' => '',
+        'value' => '',
+        'lexicon' => 'wayfinder:properties',
+    ),
 );
 return $properties;

@@ -57,6 +57,7 @@ class Wayfinder {
             'titleOfLinks' => 'pagetitle',
             'displayStart' => false,
             'permissions' => 'list',
+            'previewUnpublished' => false,
         ),$config);
         if (empty($this->_config['hereId'])) {
             $this->_config['hereId'] = $this->modx->resource->get('id');
@@ -577,7 +578,9 @@ class Wayfinder {
             }
 
             $c->where(array('modResource.id:IN' =>  $ids));
-            $c->where(array('modResource.published:=' => 1));
+            if ($this->modx->user->hasSessionContext('mgr') && $this->modx->hasPermission('view_unpublished') && $this->_config['previewUnpublished']) {} else {
+                $c->where(array('modResource.published:=' => 1));
+            }
             $c->where(array('modResource.deleted:=' => 0));
 
             /* not sure why this groupby is here in the first place. removing for now as it causes
