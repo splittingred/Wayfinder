@@ -589,7 +589,7 @@ class Wayfinder {
                 'protected' => 'ResourceGroupResources.document_group',
             ));
 
-            $result = $this->modx->getIterator('modResource', $c);
+            $result = $this->modx->getCollection('modResource', $c);
 
 
             $resourceArray = array();
