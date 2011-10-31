@@ -2,6 +2,7 @@ Changelog for Wayfinder (for Revolution).
 
 Wayfinder 2.3.3
 ====================================
+- [#40] Add wf.level placeholder to items for showing current depth
 - [#42] Allow authenticated mgr users with view_unpublished to use new previewUnpublished property to preview unpublished Resources in menus
 - [#41] Fix issue with Wayfinder and truncated result sets due to getIterator call
 

@@ -329,6 +329,7 @@ class Wayfinder {
         $placeholders['wf.classNames'] = $classNames;
         $placeholders['wf.classnames'] = $classNames;
         $placeholders['wf.id'] = $useId;
+        $placeholders['wf.level'] = $resource['level'];
         $placeholders['wf.docid'] = $resource['id'];
         $placeholders['wf.subitemcount'] = $numChildren;
         $placeholders['wf.attributes'] = $resource['link_attributes'];
