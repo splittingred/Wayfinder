@@ -44,6 +44,7 @@ class Wayfinder {
             'ph' => false,
             'debug' => false,
             'ignoreHidden' =>false,
+			'folderOnly' => false,
             'hideSubMenus' => false,
             'useWeblinkUrl' => true,
             'fullLink' => false,
@@ -534,6 +535,11 @@ class Wayfinder {
             /* add the ignore hidden option to the where clause */
             if (!$this->_config['ignoreHidden']) {
                 $c->where(array('hidemenu:=' => 0));
+            }
+			
+			/* added folder only option */
+			if ($this->_config['folderOnly']) {
+                $c->where(array('isfolder:=' => 1));
             }
 
             /* if set, limit results to specific resources */
