@@ -147,7 +147,7 @@ class Wayfinder {
      */
     public function setToCache() {
         $cacheKeys = $this->getCacheKeys();
-        $cacheTime = $this->modx->getOption('cacheTime',$this->_config,3600);
+        $cacheTime = $this->modx->getOption('cacheTime',$this->_config,null) || $cacheTime = (int)$this->modx->getOption('cache_expires', null, 0);
         $this->modx->cacheManager->set($cacheKeys['docs'],$this->docs,$cacheTime,$this->_cacheOptions);
         $this->modx->cacheManager->set($cacheKeys['children'],$this->hasChildren,$cacheTime,$this->_cacheOptions);
         return true;
@@ -161,14 +161,19 @@ class Wayfinder {
         if (!empty($this->_cacheKeys)) return $this->_cacheKeys;
         
         /* generate a UID based on the params passed to Wayfinder and the resource ID
-         * and the User ID (so that permissions get correctly applied) */
-        $cacheKey = 'wf-'.$this->modx->user->get('id').'-'.base64_encode(serialize($this->_config));
+         * and the User ID (so that permissions get correctly applied)
+         * Also make a UID to be independent of the current page's id,
+         * so a structure cache can be shared between pages.
+         */
+        $commonConfig = $this->_config;
+        unset($commonConfig['hereId']);
+        $cacheKey = 'wf-'.$this->modx->user->get('id').'-'.base64_encode(serialize($commonConfig));
         $childrenCacheKey = $cacheKey.'-children';
 
-        /* set cache keys to proper Resource cache so will sync with MODX core caching */
+        /* set cache keys to proper context cache so will sync with MODX core caching */
         $this->_cacheKeys = array(
-            'docs' => $this->modx->resource->getCacheKey().'/'.md5($cacheKey),
-            'children' => $this->modx->resource->getCacheKey().'/'.md5($childrenCacheKey),
+            'docs' => $this->modx->context->getCacheKey().'/'.sha1($cacheKey),
+            'children' => $this->modx->context->getCacheKey().'/'.sha1($childrenCacheKey),
         );
 
         $this->_cacheOptions = array(
