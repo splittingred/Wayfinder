@@ -35,9 +35,14 @@ class Wayfinder {
 
     function __construct(modX &$modx,array $config = array()) {
         $this->modx =& $modx;
+        
+        /* Make sure we actually have a Resource. */
+        $fromID = !empty($this->modx->resource) 
+                ? $this->modx->resource->get('id')
+                : 0;
 
         $this->_config = array_merge(array(
-            'id' => $this->modx->resource->get('id'),
+            'id' => $fromID,
             'level' => 0,
             'includeDocs' => '',
             'excludeDocs' => '',
