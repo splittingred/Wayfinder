@@ -593,7 +593,9 @@ class Wayfinder {
                 'protected' => 'ResourceGroupResources.document_group',
             ));
 
-            $result = $this->modx->getCollection('modResource', $c);
+            $c->prepare();
+            $c->stmt->execute();
+            $result = $c->stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
             $resourceArray = array();
@@ -628,14 +630,15 @@ class Wayfinder {
             $switchedContext = false;
             /** @var modResource $doc */
             foreach ($result as $doc)  {
-                $docContextKey = $doc->get('context_key');
+                $docContextKey = $doc['context_key'];
                 if (!empty($docContextKey) && $docContextKey != $currentContext) {
                     $this->modx->switchContext($docContextKey);
                     $switchedContext = true;
-                    $currentContext = $doc->get('context_key');
+                    $currentContext = $doc['context_key'];
                 }
-		        if ((!empty($this->_config['permissions'])) && (!$doc->checkPolicy($this->_config['permissions']))) continue;
-                $tempDocInfo = $doc->toArray();
+                //TODO: find a solution for replacing $doc->checkPolicy($this->_config['permissions']) 
+                //if ((!empty($this->_config['permissions'])) && (!$doc->checkPolicy($this->_config['permissions']))) continue;
+                $tempDocInfo = $doc;
                 $resultIds[] = $tempDocInfo['id'];
                 $tempDocInfo['content'] = $tempDocInfo['class_key'] == 'modWebLink' ? $tempDocInfo['content'] : '';
                 /* create the link */
