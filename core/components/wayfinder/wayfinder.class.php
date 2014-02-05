@@ -334,6 +334,13 @@ class Wayfinder {
         $placeholders['wf.subitemcount'] = $numChildren;
         $placeholders['wf.attributes'] = $resource['link_attributes'];
 		
+        // Add every parameter prefixed with an underscore to the placeholder array
+        foreach ($this->_config as $key => $value){
+            if( $key[0] == '_' ) {
+              $placeholders["wf.$key"] = $this->_config[$key];
+            }
+        }		
+		
         if (!empty($this->tvList)) {
             $usePlaceholders = array_merge($placeholders,$this->placeHolders['tvs']);
             foreach ($this->tvList as $tvName) {
