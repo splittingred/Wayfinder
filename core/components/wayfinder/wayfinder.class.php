@@ -259,6 +259,9 @@ class Wayfinder {
             $classNames = $this->setItemClass($wrapperClass);
             $useClass = $classNames ? ' class="' . $classNames . '"' : '';
             $phArray = array($subMenuOutput,$useClass,$classNames);
+            /* add level to wrapper */
+            $phArray[] = $level;
+            $this->placeHolders['wrapperLevel'][] = '[[+wf.level]]';
             /* process the wrapper */
             $subMenuOutput = str_replace($this->placeHolders['wrapperLevel'],$phArray,$useChunk);
             /* debug */
