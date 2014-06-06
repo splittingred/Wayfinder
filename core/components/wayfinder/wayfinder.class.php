@@ -436,8 +436,15 @@ class Wayfinder {
      *
      * @param $did Document ID to find
      * @return bool Returns true if the document ID was found
+     * 
+     * If class_key is modWebLink then use content field as $did
      */
     public function isHere($did) {
+    	$doc = $this->modx->getObject('modResource', $did);
+        $classKey = $doc->get('class_key');
+        if ($classKey == 'modWebLink'){
+           $did = $doc->get('content');
+        }
         return in_array($did,$this->parentTree);
     }
 
