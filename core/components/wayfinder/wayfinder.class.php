@@ -529,6 +529,110 @@ class Wayfinder {
         if (!empty($ids)) {
             $c = $this->modx->newQuery('modResource');
             $c->leftJoin('modResourceGroupResource','ResourceGroupResources');
+            if (!empty($this->_config['tvWhere'])) {
+              //$tvFilters = $this->modx->fromJSON($this->_config['tvWhere']);
+                $tvFilters = explode(',', $this->_config['tvWhere']);
+              
+                $tmplVarTbl = $this->modx->getTableName('modTemplateVar');
+                $tmplVarResourceTbl = $this->modx->getTableName('modTemplateVarResource');
+                $conditions = array();
+                $operators = array(
+                    '<=>' => '<=>',
+                    '===' => '=',
+                    '!==' => '!=',
+                    '<>' => '<>',
+                    '==' => 'LIKE',
+                    '!=' => 'NOT LIKE',
+                    '<<' => '<',
+                    '<=' => '<=',
+                    '=<' => '=<',
+                    '>>' => '>',
+                    '>=' => '>=',
+                    '=>' => '=>'
+                );
+                foreach ($tvFilters as $fGroup => $tvFilter) {
+                    $filterGroup = array();
+                    $filters = explode(',', $tvFilter);
+                    $multiple = count($filters) > 0;
+                    foreach ($filters as $filter) {
+                        $operator = '==';
+                        $sqlOperator = 'LIKE';
+                        foreach ($operators as $op => $opSymbol) {
+                            if (strpos($filter, $op, 1) !== false) {
+                                $operator = $op;
+                                $sqlOperator = $opSymbol;
+                                break;
+                            }
+                        }
+                        $tvValueField = 'tvr.value';
+                        $tvDefaultField = 'tv.default_text';
+                        $f = explode($operator, $filter);
+                        if (count($f) >= 2) {
+                            if (count($f) > 2) {
+                                $k = array_shift($f);
+                                $b = join($operator, $f);
+                                $f = array($k, $b);
+                            }
+                            $tvName = $this->modx->quote($f[0]);
+                            if (is_numeric($f[1]) && !in_array($sqlOperator, array('LIKE', 'NOT LIKE'))) {
+                                $tvValue = $f[1];
+                                if ($f[1] == (integer)$f[1]) {
+                                    $tvValueField = "CAST({$tvValueField} AS SIGNED INTEGER)";
+                                    $tvDefaultField = "CAST({$tvDefaultField} AS SIGNED INTEGER)";
+                                } else {
+                                    $tvValueField = "CAST({$tvValueField} AS DECIMAL)";
+                                    $tvDefaultField = "CAST({$tvDefaultField} AS DECIMAL)";
+                                }
+                            } else {
+                                $tvValue = $this->modx->quote($f[1]);
+                            }
+                            if ($multiple) {
+                                $filterGroup[] =
+                                    "(EXISTS (SELECT 1 FROM {$tmplVarResourceTbl} tvr JOIN {$tmplVarTbl} tv ON {$tvValueField} {$sqlOperator} {$tvValue} AND tv.name = {$tvName} AND tv.id = tvr.tmplvarid WHERE tvr.contentid = modResource.id) " .
+                                    "OR EXISTS (SELECT 1 FROM {$tmplVarTbl} tv WHERE tv.name = {$tvName} AND {$tvDefaultField} {$sqlOperator} {$tvValue} AND tv.id NOT IN (SELECT tmplvarid FROM {$tmplVarResourceTbl} WHERE contentid = modResource.id)) " .
+                                    ")";
+                            } else {
+                                $filterGroup =
+                                    "(EXISTS (SELECT 1 FROM {$tmplVarResourceTbl} tvr JOIN {$tmplVarTbl} tv ON {$tvValueField} {$sqlOperator} {$tvValue} AND tv.name = {$tvName} AND tv.id = tvr.tmplvarid WHERE tvr.contentid = modResource.id) " .
+                                    "OR EXISTS (SELECT 1 FROM {$tmplVarTbl} tv WHERE tv.name = {$tvName} AND {$tvDefaultField} {$sqlOperator} {$tvValue} AND tv.id NOT IN (SELECT tmplvarid FROM {$tmplVarResourceTbl} WHERE contentid = modResource.id)) " .
+                                    ")";
+                            }
+                        } elseif (count($f) == 1) {
+                            $tvValue = $this->modx->quote($f[0]);
+                            if ($multiple) {
+                                $filterGroup[] = "EXISTS (SELECT 1 FROM {$tmplVarResourceTbl} tvr JOIN {$tmplVarTbl} tv ON {$tvValueField} {$sqlOperator} {$tvValue} AND tv.id = tvr.tmplvarid WHERE tvr.contentid = modResource.id)";
+                            } else {
+                                $filterGroup = "EXISTS (SELECT 1 FROM {$tmplVarResourceTbl} tvr JOIN {$tmplVarTbl} tv ON {$tvValueField} {$sqlOperator} {$tvValue} AND tv.id = tvr.tmplvarid WHERE tvr.contentid = modResource.id)";
+                            }
+                        }
+                    }
+                    $conditions[] = $filterGroup;
+                }
+                if (!empty($conditions)) {
+                    $firstGroup = true;
+                    foreach ($conditions as $cGroup => $co) {
+                        if (is_array($co)) {
+                            $first = true;
+                            foreach ($co as $cond) {
+                                if ($first && !$firstGroup) {
+                                    $c->condition($c->query['where'][0][1], $cond, xPDOQuery::SQL_OR, null, $cGroup);
+                                } else {
+                                    $c->condition($c->query['where'][0][1], $cond, xPDOQuery::SQL_AND, null, $cGroup);
+                                }
+/*
+                                $c->prepare();
+                                die("sql:\n" . $c->toSQL());
+                  die('<pre>' . print_r($criteria,true) . '</pre>');
+*/
+                                $first = false;
+                            }
+                        } else {
+                            $c->condition($c->query['where'][0][1], $co, $firstGroup ? xPDOQuery::SQL_AND : xPDOQuery::SQL_OR, null, $cGroup);
+                        }
+                        $firstGroup = false;
+                    }
+                }
+            } // end tvWhere
             $c->query['distinct'] = 'DISTINCT';
 
             /* add the ignore hidden option to the where clause */
@@ -592,6 +696,11 @@ class Wayfinder {
             $c->select(array(
                 'protected' => 'ResourceGroupResources.document_group',
             ));
+            
+/*
+            $c->prepare();
+            die($c->toSQL());
+*/
 
             $result = $this->modx->getCollection('modResource', $c);
 
@@ -639,7 +748,7 @@ class Wayfinder {
                 $resultIds[] = $tempDocInfo['id'];
                 $tempDocInfo['content'] = $tempDocInfo['class_key'] == 'modWebLink' ? $tempDocInfo['content'] : '';
                 /* create the link */
-                $linkScheme = $this->_config['fullLink'] ? 'full' : $this->modx->getOption('link_tag_scheme',null,'');
+                $linkScheme = $this->_config['fullLink'] ? 'full' : '';
                 if (!empty($this->_config['scheme'])) $linkScheme = $this->_config['scheme'];
 
                 if ($this->_config['useWeblinkUrl'] !== 'false' && $tempDocInfo['class_key'] == 'modWebLink') {
