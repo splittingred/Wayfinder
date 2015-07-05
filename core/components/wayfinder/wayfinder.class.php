@@ -531,6 +531,11 @@ class Wayfinder {
             $c->leftJoin('modResourceGroupResource','ResourceGroupResources');
             $c->query['distinct'] = 'DISTINCT';
 
+            /* add the complex SQL expression where clause from */
+            if ( $this->_config['complexWhere'] ) {
+            	$c->where( $this->_config['complexWhere'] );
+            }	
+
             /* add the ignore hidden option to the where clause */
             if (!$this->_config['ignoreHidden']) {
                 $c->where(array('hidemenu:=' => 0));
