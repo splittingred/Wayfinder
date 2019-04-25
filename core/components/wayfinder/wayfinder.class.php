@@ -808,7 +808,9 @@ class Wayfinder {
     }
 
     public function findTemplateVars($tpl) {
-        preg_match_all('~\[\[\+(.*?)\]\]~', $tpl, $matches);
+	# Intersel - 20190425 -remove [[++settings]] variables from match
+	#preg_match_all('~\[\[\+(.*?)\]\]~', $tpl, $matches);
+	preg_match_all('~\[\[\+([^\+].*?)\]\]~', $tpl, $matches);
         $TVs = array();
         foreach($matches[1] as $tv) {
             if (strpos($tv, "wf.") === false) {
